@@ -71,4 +71,15 @@ function test()
     get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, omega, x, y)
 
     t1_bar = get_matrix("T1-MULTIPLIERS", out_name)
+
+    t2_bar = unpack_t2(mol, get_vector("T2-MULTIPLIERS", out_name))
+
+    s1_bar = get_matrix("S1-MULTIPLIERS", out_name)
+
+    s2_bar = unpack_t2(mol, get_vector("S2-MULTIPLIERS", out_name))
+
+    γ_bar = get_vector("Photon multipliers", out_name)[1]
+
+    @time one_electron_density(mol, t2, s1, s2, γ,
+        t1_bar, t2_bar, s1_bar, s2_bar, γ_bar)
 end
