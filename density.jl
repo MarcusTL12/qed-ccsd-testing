@@ -182,6 +182,21 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
     D
 end
 
+function one_electron_from_two_electron(mol, d)
+    nao = py"int"(mol.nao)
+    nocc = mol.nelectron ÷ 2
+
+    D = einsum("pqrr->pq", d) / (mol.nelectron - 1)
+end
+
+function photon_density(mol, t2, s1, s2, γ,
+    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+
+    γ + γ_bar +
+    einsum("ai,ai->", s1, t1_bar) +
+    einsum("aibj,aibj->", s2, t2_t)
+end
+
 function two_electron_density(mol, t2, s1, s2, γ,
     t1_bar, t2_t, s1_bar, s2_t, γ_bar)
     nao = py"int"(mol.nao)
@@ -270,6 +285,8 @@ function two_electron_density(mol, t2, s1, s2, γ,
         d_oovo[i, i, :, :] .+= 2 * t1_bar
         d_oovo[i, :, :, i] .-= 1 * t1_bar'
     end
+
+    permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
 
     # d_ijab =
     # + 4 ∑_kcl(δ_ij t_bkcl tᵗ_akcl)

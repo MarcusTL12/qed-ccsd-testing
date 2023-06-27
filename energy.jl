@@ -83,3 +83,27 @@ function get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, ω, x, y)
 
     @show E
 end
+
+function get_energy_t1_density(mol, pol, C, ω, x, y, D_e, D_ep, D_p, d_e)
+    d = get_qed_d(mol, pol, C)
+
+    d_exp = get_qed_dipmom(mol, d)
+
+    h = get_qed_h(mol, C, d)
+    g = get_qed_g(mol, C, d)
+
+    h = t1_transform_1e(h, x, y)
+    g = t1_transform_2e(g, x, y)
+    d = t1_transform_1e(d, x, y)
+
+    nao = py"int"(mol.nao)
+    nocc = mol.nelectron ÷ 2
+
+    E = mol.energy_nuc() +
+        einsum("pq,pq->", h, D_e) +
+        1 / 2 * einsum("pqrs,pqrs->", g, d_e) +
+        √(ω / 2) * einsum("pq,pq->", d, D_ep) -
+        √(ω / 2) * d_exp * D_p
+
+    @show E
+end
