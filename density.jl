@@ -181,3 +181,95 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
 
     D
 end
+
+function two_electron_density(mol, t2, s1, s2, γ,
+    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+    nao = py"int"(mol.nao)
+    nocc = mol.nelectron ÷ 2
+
+    o = 1:nocc
+    v = nocc+1:nao
+
+    d = zeros(nao, nao, nao, nao)
+
+    d_oooo = @view d[o, o, o, o]
+    d_ooov = @view d[o, o, o, v]
+    d_oovo = @view d[o, o, v, o]
+    d_oovv = @view d[o, o, v, v]
+    d_ovoo = @view d[o, v, o, o]
+    d_ovov = @view d[o, v, o, v]
+    d_ovvo = @view d[o, v, v, o]
+    d_ovvv = @view d[o, v, v, v]
+    d_vooo = @view d[v, o, o, o]
+    d_voov = @view d[v, o, o, v]
+    d_vovo = @view d[v, o, v, o]
+    d_vovv = @view d[v, o, v, v]
+    d_vvoo = @view d[v, v, o, o]
+    d_vvov = @view d[v, v, o, v]
+    d_vvvo = @view d[v, v, v, o]
+    d_vvvv = @view d[v, v, v, v]
+
+    # Λ0:
+
+    # d_ijkl =
+    # 4 δ_ij δ_kl
+    # - 2 δ_il δ_jk
+
+    for i in o, j in o
+        d[i, i, j, j] += 4
+        d[i, j, j, i] -= 2
+    end
+
+    # - 4 ∑_abm(δ_kl t_aibm tᵗ_ajbm)
+    # + 2 ∑_abm(δ_jk t_aibm tᵗ_albm)
+    # + 2 ∑_abm(δ_il t_akbm tᵗ_ajbm)
+    # - 4 ∑_abm(δ_ij t_akbm tᵗ_albm)
+
+    diag_elem = einsum("aibm,ajbm->ij", t2, t2_t)
+
+    for i in o
+        d_oooo[:, :, i, i] .-= 4 * diag_elem
+        d_oooo[:, i, i, :] .+= 2 * diag_elem
+        d_oooo[i, :, :, i] .+= 2 * diag_elem'
+        d_oooo[i, i, :, :] .-= 4 * diag_elem
+    end
+
+    # + 2 ∑_ab(t_aibk tᵗ_ajbl)
+
+    d_oooo .+= 2 * einsum("aibk,ajbl->ijkl", t2, t2_t)
+
+    # d_ijka = 
+    # + 4 ∑_bl(δ_ij t_akbl tᴸ_bl)
+    # - 2 ∑_lb(δ_ij t_albk tᴸ_bl)
+    # - 2 ∑_bl(δ_jk t_aibl tᴸ_bl)
+    # +   ∑_lb(δ_jk t_albi tᴸ_bl)
+    #
+    # +   ∑_b(t_aibk tᴸ_bj)
+    # - 2 ∑_b(t_akbi tᴸ_bj)
+
+    diag_elem1 = einsum("aibl,bl->ia", t2, t1_bar)
+    diag_elem2 = einsum("albi,bl->ia", t2, t1_bar)
+
+    diag_elem = 2 * diag_elem1 - diag_elem2
+
+    for i in o
+        d_ooov[i, i, :, :] .+= 2 * diag_elem
+        d_ooov[:, i, i, :] .-= diag_elem
+    end
+
+    d_ooov .+= 1 * einsum("aibk,bj->ijka", t2, t1_bar) -
+               2 * einsum("akbi,bj->ijka", t2, t1_bar)
+
+    permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
+
+    # d_ijak = 
+    # + 2 δ_ij tᴸ_ak
+    # -   δ_ik tᴸ_aj
+
+    for i in o
+        d_oovo[i, i, :, :] .+= 2 * t1_bar
+        d_oovo[i, :, :, i] .-= 1 * t1_bar'
+    end
+
+    d
+end

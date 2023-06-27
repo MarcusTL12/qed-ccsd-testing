@@ -88,4 +88,7 @@ function test()
 
     D_ep = @time one_electron_one_photon(mol, t2, s1, s2, γ,
         t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+
+    d = @time two_electron_density(mol, t2, s1, s2, γ,
+        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
 end
