@@ -346,5 +346,14 @@ function two_electron_density(mol, t2, s1, s2, γ,
 
     permutedims!(d_voov, d_ovvo, (3, 4, 1, 2))
 
+    # d_iabc =
+    # 2 ∑_j(t_aicj tᴸ_bj)
+    # - ∑_j(t_ajci tᴸ_bj)
+
+    d_ovvv .+= 2 * einsum("aicj,bj->iabc", t2, t1_bar) -
+               1 * einsum("ajci,bj->iabc", t2, t1_bar)
+
+    permutedims!(d_vvov, d_ovvv, (3, 4, 1, 2))
+
     d
 end
