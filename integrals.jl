@@ -106,3 +106,13 @@ end
 function t1_transform_2e(g, x, y)
     einsum("pt,qu,rm,sn,tumn->pqrs", x, y, x, y, g)
 end
+
+function t2_tilde(t2_bar)
+    t2_tilde = Array(t2_bar)
+
+    for a in axes(t2_tilde, 1), i in axes(t2_tilde, 2)
+        t2_tilde[a, i, a, i] *= 2
+    end
+
+    t2_tilde
+end

@@ -80,6 +80,12 @@ function test()
 
     γ_bar = get_vector("Photon multipliers", out_name)[1]
 
-    @time one_electron_density(mol, t2, s1, s2, γ,
-        t1_bar, t2_bar, s1_bar, s2_bar, γ_bar)
+    t2_t = t2_tilde(t2_bar)
+    s2_t = t2_tilde(s2_bar)
+
+    D_e = @time one_electron_density(mol, t2, s1, s2, γ,
+        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+
+    D_ep = @time one_electron_one_photon(mol, t2, s1, s2, γ,
+        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
 end
