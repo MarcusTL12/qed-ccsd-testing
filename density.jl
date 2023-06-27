@@ -355,5 +355,10 @@ function two_electron_density(mol, t2, s1, s2, γ,
 
     permutedims!(d_vvov, d_ovvv, (3, 4, 1, 2))
 
+    # d_aibj =
+    # 2 tᵗ_aibj
+
+    d_vovo .+= 2 * t2_t
+
     d
 end
