@@ -615,7 +615,7 @@ function two_electron_density(mol, t2, s1, s2, γ,
                4 * einsum("aick,bjck->iabj", s2, s2_t) -
                2 * einsum("akci,bjck->iabj", s2, s2_t)
 
-    # d_iabc = 
+    # d_iabc =
     # + 2 ∑_j(s_aicj sᴸ_bj)
     # - 1 ∑_j(s_ajci sᴸ_bj)
     #
@@ -636,6 +636,11 @@ function two_electron_density(mol, t2, s1, s2, γ,
                4 * einsum("cj,bjdk,aidk->iabc", s1, s2_t, t2) -
                2 * einsum("cj,bjdk,akdi->iabc", s1, s2_t, t2) -
                2 * einsum("di,bjdk,akcj->iabc", s1, s2_t, t2)
+
+    # d_aibc =
+    # 2 ∑_j(s_cj sᵗ_aibj)
+
+    d_vovv .+= 2 * einsum("cj,aibj->aibc", s1, s2_t)
 
     permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
     permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
