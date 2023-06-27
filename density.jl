@@ -385,5 +385,40 @@ function two_electron_density(mol, t2, s1, s2, γ,
 
     d_vvvv .+= 2 * einsum("aicj,bidj->abcd", t2_t, t2)
 
+    # Λ1:
+
+    # d_ijkl =
+    # - 2 ∑_a(δ_ij s_ak sᴸ_al)
+    # + 1 ∑_a(δ_il s_ak sᴸ_aj)
+    #
+    # - 2 ∑_a(δ_kl s_ai sᴸ_aj)
+    # + 1 ∑_a(δ_jk s_ai sᴸ_al)
+    #
+    # - 4 ∑_abm(δ_ij s_akbm sᵗ_albm)
+    # - 4 ∑_abm(δ_kl s_aibm sᵗ_ajbm)
+    # + 2 ∑_abm(δ_il s_akbm sᵗ_ajbm)
+    # + 2 ∑_abm(δ_jk s_aibm sᵗ_albm)
+    #
+    # + 2 ∑_ab(s_aibk sᵗ_ajbl)
+
+    diag_elem1 = einsum("ak,al->kl", s1, s1_bar)
+    diag_elem2 = einsum("akbm,albm->kl", s2, s2_t)
+
+    for i in o
+        d_oooo[i, i, :, :] .-= 2 * diag_elem1
+        d_oooo[:, :, i, i] .-= 2 * diag_elem1
+
+        d_oooo[i, :, :, i] .+= 1 * diag_elem1'
+        d_oooo[:, i, i, :] .+= 1 * diag_elem1
+
+        d_oooo[i, i, :, :] .-= 4 * diag_elem2
+        d_oooo[:, :, i, i] .-= 4 * diag_elem2
+
+        d_oooo[i, :, :, i] .+= 2 * diag_elem2'
+        d_oooo[:, i, i, :] .+= 2 * diag_elem2
+    end
+
+    d_oooo .+= 2 * einsum("aibk,ajbl->ijkl", s2, s2_t)
+
     d
 end
