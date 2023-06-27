@@ -329,5 +329,22 @@ function two_electron_density(mol, t2, s1, s2, γ,
                2 * einsum("alcj,bkdi,ckdl->iajb", t2, t2, t2_t) +
                2 * einsum("alck,bidj,ckdl->iajb", t2, t2, t2_t)
 
+    # d_iabj =
+    # - 2 ∑_kcl(δ_ij t_akcl tᵗ_bkcl)
+    #
+    # + 4 ∑_ck(t_aick tᵗ_bjck)
+    # - 2 ∑_kc(t_akci tᵗ_bjck)
+
+    diag_elem = 2 * einsum("akcl,bkcl->ab", t2, t2_t)
+
+    for i in o
+        d_ovvo[i, :, :, i] .-= diag_elem
+    end
+
+    d_ovvo .+= 4 * einsum("aick,bjck->iabj", t2, t2_t) -
+               2 * einsum("akci,bjck->iabj", t2, t2_t)
+
+    permutedims!(d_voov, d_ovvo, (3, 4, 1, 2))
+
     d
 end
