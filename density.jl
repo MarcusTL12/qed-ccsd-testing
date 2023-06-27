@@ -462,6 +462,11 @@ function two_electron_density(mol, t2, s1, s2, γ,
                2 * einsum("bk,bjcl,aicl->ijka", s1, s2_t, t2) +
                2 * einsum("bk,blcj,alci->ijka", s1, s2_t, t2)
 
+    # d_ijak = 
+    # - 2 ∑_b(s_bi sᵗ_akbj)
+
+    d_oovo .-= 2 * einsum("bi,akbj->ijak", s1, s2_t)
+
     permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
     permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
     permutedims!(d_vvoo, d_oovv, (3, 4, 1, 2))
