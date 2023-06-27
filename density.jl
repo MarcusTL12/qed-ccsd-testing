@@ -360,5 +360,13 @@ function two_electron_density(mol, t2, s1, s2, γ,
 
     d_vovo .+= 2 * t2_t
 
+    # d_aibc =
+    # 0
+
+    # d_abcd =
+    # 2 ∑_ij(t_bidj tᵗ_aicj)
+
+    d_vvvv .+= 2 * einsum("aicj,bidj->abcd", t2_t, t2)
+
     d
 end
