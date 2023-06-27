@@ -84,7 +84,7 @@ function get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, ω, x, y)
     @show E
 end
 
-function get_energy_t1_density(mol, pol, C, ω, x, y, D_e, D_ep, D_p, d_e)
+function get_energy_t1_density(mol, pol, C, ω, x, y, D_e, D_ep, D_p1, D_p2, d_e)
     d = get_qed_d(mol, pol, C)
 
     d_exp = get_qed_dipmom(mol, d)
@@ -103,7 +103,8 @@ function get_energy_t1_density(mol, pol, C, ω, x, y, D_e, D_ep, D_p, d_e)
         einsum("pq,pq->", h, D_e) +
         1 / 2 * einsum("pqrs,pqrs->", g, d_e) +
         √(ω / 2) * einsum("pq,pq->", d, D_ep) -
-        √(ω / 2) * d_exp * D_p
+        √(ω / 2) * d_exp * D_p2 +
+        ω * D_p1
 
     @show E
 end

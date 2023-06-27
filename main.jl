@@ -22,12 +22,12 @@ function test()
 """, basis="STO-3G")
 
     omega = 0.5
-    coup = 0.05
+    coup = 0.5
     # coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 
-    # out_name = run_eT_tor(mol, omega, coup, pol)
-    out_name = "tmp_eT/ccsd"
+    out_name = run_eT_tor(mol, omega, coup, pol)
+    # out_name = "tmp_eT/ccsd"
 
     pol *= coup
 
@@ -89,11 +89,21 @@ function test()
     D_ep = @time one_electron_one_photon(mol, t2, s1, s2, γ,
         t1_bar, t2_t, s1_bar, s2_t, γ_bar)
 
-    D_p = @time photon_density(mol, t2, s1, s2, γ,
+    D_p1 = @time photon_density1(mol, t2, s1, s2, γ,
         t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+
+    D_p2 = @time photon_density2(mol, t2, s1, s2, γ,
+        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+
+    @show D_p1 D_p2
 
     d = @time two_electron_density(mol, t2, s1, s2, γ,
         t1_bar, t2_t, s1_bar, s2_t, γ_bar)
 
-    @time get_energy_t1_density(mol, pol, C, omega, x, y, D_e, D_ep, D_p, d)
+    D_d = one_electron_from_two_electron(mol, d)
+
+    display(D_d - D_e)
+
+    @time get_energy_t1_density(mol, pol, C, omega, x, y,
+        D_e, D_ep, D_p1, D_p2, d)
 end

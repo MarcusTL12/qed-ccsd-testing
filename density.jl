@@ -189,7 +189,16 @@ function one_electron_from_two_electron(mol, d)
     D = einsum("pqrr->pq", d) / (mol.nelectron - 1)
 end
 
-function photon_density(mol, t2, s1, s2, γ,
+# Calculate ⟨Λ| b† b |CC⟩
+function photon_density1(mol, t2, s1, s2, γ,
+    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+    γ * γ_bar +
+    einsum("ai,ai->", s1, s1_bar) +
+    einsum("aibj,aibj->", s2, s2_t)
+end
+
+# Calculate ⟨Λ| b† + b |CC⟩
+function photon_density2(mol, t2, s1, s2, γ,
     t1_bar, t2_t, s1_bar, s2_t, γ_bar)
 
     γ + γ_bar +
@@ -445,11 +454,21 @@ function two_electron_density(mol, t2, s1, s2, γ,
         d_ooov[i, i, :, :] .+= 4 * s1' * γ_bar
         d_ooov[:, i, i, :] .-= 2 * s1' * γ_bar
 
-        d_ooov[i, i, :, :] .+= 2 * diag_elem1
-        d_ooov[:, i, i, :] .+= 1 * diag_elem1
+        # d_ooov[i, i, :, :] .+= 2 * diag_elem1
+        # d_ooov[:, i, i, :] .+= 1 * diag_elem1
 
-        d_ooov[i, i, :, :] .-= 4 * diag_elem2
-        d_ooov[:, i, i, :] .+= 2 * diag_elem2
+        # d_ooov[i, i, :, :] .-= 4 * diag_elem2
+        # d_ooov[:, i, i, :] .+= 2 * diag_elem2
+
+        d_ooov[i, i, :, :] .+= 4 * einsum("akbl,bl->ka", s2, s1_bar)
+        d_ooov[i, i, :, :] .-= 2 * einsum("albk,bl->ka", s2, s1_bar)
+        d_ooov[:, i, i, :] .-= 2 * einsum("aibl,bl->ia", s2, s1_bar)
+        d_ooov[:, i, i, :] .+= 1 * einsum("albi,bl->ia", s2, s1_bar)
+
+        d_ooov[i, i, :, :] .-= 4 * einsum("al,blcm,bkcm->ka", s1, s2_t, t2)
+        d_ooov[i, i, :, :] .-= 4 * einsum("bk,blcm,alcm->ka", s1, s2_t, t2)
+        d_ooov[:, i, i, :] .+= 2 * einsum("al,blcm,bicm->ia", s1, s2_t, t2)
+        d_ooov[:, i, i, :] .+= 2 * einsum("bi,blcm,alcm->ia", s1, s2_t, t2)
     end
 
     d_ooov .+= -2 * einsum("akbi,bj->ijka", s2, s1_bar) +
@@ -628,7 +647,7 @@ function two_electron_density(mol, t2, s1, s2, γ,
     # - 2 ∑_djk(s_di sᵗ_bjdk t_akcj)
 
     d_ovvv .+= 2 * einsum("aicj,bj->iabc", s2, s1_bar) -
-               1 * einsum("aicj,bj->iabc", s2, s1_bar) +
+               1 * einsum("ajci,bj->iabc", s2, s1_bar) +
                4 * einsum("ai,bjdk,cjdk->iabc", s1, s2_t, t2) -
                2 * einsum("aj,bjdk,cidk->iabc", s1, s2_t, t2) -
                2 * einsum("aj,bkdj,ckdi->iabc", s1, s2_t, t2) -
