@@ -410,7 +410,7 @@ function two_electron_density(mol, t2, s1, s2, γ,
 
     d_oooo .+= 2 * einsum("aibk,ajbl->ijkl", s2, s2_t)
 
-    # d_ijka = 
+    # d_ijka =
     # + 4 δ_ij s_ak γᴸ
     # - 2 δ_jk s_ai γᴸ
     #
@@ -462,10 +462,29 @@ function two_electron_density(mol, t2, s1, s2, γ,
                2 * einsum("bk,bjcl,aicl->ijka", s1, s2_t, t2) +
                2 * einsum("bk,blcj,alci->ijka", s1, s2_t, t2)
 
-    # d_ijak = 
+    # d_ijak =
     # - 2 ∑_b(s_bi sᵗ_akbj)
 
     d_oovo .-= 2 * einsum("bi,akbj->ijak", s1, s2_t)
+
+    # d_ijab =
+    # + 2 ∑_k(δ_ij s_bk sᴸ_ak)
+    # + 4 ∑_kcl(δ_ij s_bkcl sᵗ_akcl)
+    #
+    # - s_bi sᴸ_aj
+    # - 2 ∑_ck(s_bick sᵗ_ajck)
+    # - 2 ∑_kc(s_bkci sᵗ_akcj)
+
+    diag_elem = 2 * einsum("ak,bk->ab", s1_bar, s1) +
+                4 * einsum("akcl,bkcl->ab", s2_t, s2)
+
+    for i in o
+        d_oovv[i, i, :, :] .+= diag_elem
+    end
+
+    d_oovv .-= 1 * einsum("bi,aj->ijab", s1, s1_bar) +
+               2 * einsum("bick,ajck->ijab", s2, s2_t) +
+               2 * einsum("bkci,akcj->ijab", s2, s2_t)
 
     permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
     permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
