@@ -92,12 +92,8 @@ function test()
     D_p = @time photon_density(mol, t2, s1, s2, γ,
         t1_bar, t2_t, s1_bar, s2_t, γ_bar)
 
-    @show D_p
-
     d = @time two_electron_density(mol, t2, s1, s2, γ,
         t1_bar, t2_t, s1_bar, s2_t, γ_bar)
-
-    @show size(d)
 
     @time get_energy_t1_density(mol, pol, C, omega, x, y, D_e, D_ep, D_p, d)
 end

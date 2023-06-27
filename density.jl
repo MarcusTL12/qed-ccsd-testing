@@ -275,8 +275,6 @@ function two_electron_density(mol, t2, s1, s2, γ,
     d_ooov .+= 1 * einsum("aibk,bj->ijka", t2, t1_bar) -
                2 * einsum("akbi,bj->ijka", t2, t1_bar)
 
-    permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
-
     # d_ijak =
     # + 2 δ_ij tᴸ_ak
     # -   δ_ik tᴸ_aj
@@ -285,8 +283,6 @@ function two_electron_density(mol, t2, s1, s2, γ,
         d_oovo[i, i, :, :] .+= 2 * t1_bar
         d_oovo[i, :, :, i] .-= 1 * t1_bar'
     end
-
-    permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
 
     # d_ijab =
     # + 4 ∑_kcl(δ_ij t_bkcl tᵗ_akcl)
@@ -301,8 +297,6 @@ function two_electron_density(mol, t2, s1, s2, γ,
 
     d_oovv .-= 2 * einsum("ajck,bick->ijab", t2_t, t2) +
                2 * einsum("akcj,bkci->ijab", t2_t, t2)
-
-    permutedims!(d_vvoo, d_oovv, (3, 4, 1, 2))
 
     # d_iajb =
     # 4 t_aibj
@@ -361,16 +355,12 @@ function two_electron_density(mol, t2, s1, s2, γ,
     d_ovvo .+= 4 * einsum("aick,bjck->iabj", t2, t2_t) -
                2 * einsum("akci,bjck->iabj", t2, t2_t)
 
-    permutedims!(d_voov, d_ovvo, (3, 4, 1, 2))
-
     # d_iabc =
     # 2 ∑_j(t_aicj tᴸ_bj)
     # - ∑_j(t_ajci tᴸ_bj)
 
     d_ovvv .+= 2 * einsum("aicj,bj->iabc", t2, t1_bar) -
                1 * einsum("ajci,bj->iabc", t2, t1_bar)
-
-    permutedims!(d_vvov, d_ovvv, (3, 4, 1, 2))
 
     # d_aibj =
     # 2 tᵗ_aibj
@@ -419,6 +409,65 @@ function two_electron_density(mol, t2, s1, s2, γ,
     end
 
     d_oooo .+= 2 * einsum("aibk,ajbl->ijkl", s2, s2_t)
+
+    # d_ijka = 
+    # + 4 δ_ij s_ak γᴸ
+    # - 2 δ_jk s_ai γᴸ
+    #
+    # + 4 ∑_bl(δ_ij s_akbl sᴸ_bl)
+    # - 2 ∑_lb(δ_ij s_albk sᴸ_bl)
+    # - 2 ∑_bl(δ_jk s_aibl sᴸ_bl)
+    # + 1 ∑_lb(δ_jk s_albi sᴸ_bl)
+    #
+    # - 4 ∑_lbcm(δ_ij s_al sᵗ_blcm t_bkcm)
+    # - 4 ∑_blcm(δ_ij s_bk sᵗ_blcm t_alcm)
+    # + 2 ∑_lbcm(δ_jk s_al sᵗ_blcm t_bicm)
+    # + 2 ∑_blcm(δ_jk s_bi sᵗ_blcm t_alcm)
+    #
+    # - 2 ∑_b(s_akbi sᴸ_bj)
+    # + 1 ∑_b(s_aibk sᴸ_bj)
+    #
+    # - 4 ∑_bcl(s_ak sᵗ_bjcl t_bicl)
+    # + 2 ∑_bcl(s_ai sᵗ_bjcl t_bkcl)
+    # + 2 ∑_lbc(s_al sᵗ_bjcl t_bick)
+    # - 4 ∑_bcl(s_bi sᵗ_bjcl t_akcl)
+    # + 2 ∑_bcl(s_bi sᵗ_bjcl t_alck)
+    # + 2 ∑_bcl(s_bk sᵗ_bjcl t_aicl)
+    # + 2 ∑_blc(s_bk sᵗ_blcj t_alci)
+
+    diag_elem1 = 2 * einsum("akbl,bl->ka", s2, s1_bar) -
+                 1 * einsum("albk,bl->ka", s2, s1_bar)
+
+    diag_elem2 = einsum("al,blcm,bkcm->ka", s1, s2_t, t2) +
+                 einsum("bk,blcm,alcm->ka", s1, s2_t, t2)
+
+    for i in o
+        d_ooov[i, i, :, :] .+= 4 * s1' * γ_bar
+        d_ooov[:, i, i, :] .-= 2 * s1' * γ_bar
+
+        d_ooov[i, i, :, :] .+= 2 * diag_elem1
+        d_ooov[:, i, i, :] .+= 1 * diag_elem1
+
+        d_ooov[i, i, :, :] .-= 4 * diag_elem2
+        d_ooov[:, i, i, :] .+= 2 * diag_elem2
+    end
+
+    d_ooov .+= -2 * einsum("akbi,bj->ijka", s2, s1_bar) +
+               1 * einsum("aibk,bj->ijka", s2, s1_bar) -
+               4 * einsum("ak,bjcl,bicl->ijka", s1, s2_t, t2) +
+               2 * einsum("ai,bjcl,bkcl->ijka", s1, s2_t, t2) +
+               2 * einsum("al,bjcl,bick->ijka", s1, s2_t, t2) -
+               4 * einsum("bi,bjcl,akcl->ijka", s1, s2_t, t2) +
+               2 * einsum("bi,bjcl,alck->ijka", s1, s2_t, t2) +
+               2 * einsum("bk,bjcl,aicl->ijka", s1, s2_t, t2) +
+               2 * einsum("bk,blcj,alci->ijka", s1, s2_t, t2)
+
+    permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
+    permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
+    permutedims!(d_vvoo, d_oovv, (3, 4, 1, 2))
+    permutedims!(d_voov, d_ovvo, (3, 4, 1, 2))
+    permutedims!(d_vvov, d_ovvv, (3, 4, 1, 2))
+    permutedims!(d_vvvo, d_vovv, (3, 4, 1, 2))
 
     d
 end
