@@ -615,6 +615,28 @@ function two_electron_density(mol, t2, s1, s2, γ,
                4 * einsum("aick,bjck->iabj", s2, s2_t) -
                2 * einsum("akci,bjck->iabj", s2, s2_t)
 
+    # d_iabc = 
+    # + 2 ∑_j(s_aicj sᴸ_bj)
+    # - 1 ∑_j(s_ajci sᴸ_bj)
+    #
+    # + 4 ∑_jdk(s_ai sᵗ_bjdk t_cjdk)
+    # - 2 ∑_jdk(s_aj sᵗ_bjdk t_cidk)
+    # - 2 ∑_jkd(s_aj sᵗ_bkdj t_ckdi)
+    # - 2 ∑_jdk(s_ci sᵗ_bjdk t_ajdk)
+    # + 4 ∑_jdk(s_cj sᵗ_bjdk t_aidk)
+    # - 2 ∑_jdk(s_cj sᵗ_bjdk t_akdi)
+    # - 2 ∑_djk(s_di sᵗ_bjdk t_akcj)
+
+    d_ovvv .+= 2 * einsum("aicj,bj->iabc", s2, s1_bar) -
+               1 * einsum("aicj,bj->iabc", s2, s1_bar) +
+               4 * einsum("ai,bjdk,cjdk->iabc", s1, s2_t, t2) -
+               2 * einsum("aj,bjdk,cidk->iabc", s1, s2_t, t2) -
+               2 * einsum("aj,bkdj,ckdi->iabc", s1, s2_t, t2) -
+               2 * einsum("ci,bjdk,ajdk->iabc", s1, s2_t, t2) +
+               4 * einsum("cj,bjdk,aidk->iabc", s1, s2_t, t2) -
+               2 * einsum("cj,bjdk,akdi->iabc", s1, s2_t, t2) -
+               2 * einsum("di,bjdk,akcj->iabc", s1, s2_t, t2)
+
     permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
     permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
     permutedims!(d_vvoo, d_oovv, (3, 4, 1, 2))
