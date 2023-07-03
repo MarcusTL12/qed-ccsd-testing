@@ -95,9 +95,10 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
 
     D_oo .-= 2 * einsum("aibk,ajbk->ij", t2, s2_t)
 
+    # b:
     #  D0_ia = 2 s_ai
     #  + 2 ∑_bj(s_aibj tᴸ_bj)
-    #  -   ∑_jb(s_ajbi tᴸ_bj)
+    #  - 1 ∑_jb(s_ajbi tᴸ_bj)
     #
     #  + 4 ∑_bjck(s_bj t_aick tᵗ_bjck)
     #  - 2 ∑_jbck(s_aj t_bick tᵗ_bjck)
@@ -105,7 +106,7 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
     #  - 2 ∑_bjkc(s_bj t_akci tᵗ_bjck)
     #
     #  + 2 ∑_bj(t_aibj tᴸ_bj γ)
-    #  - ∑_jb(t_ajbi tᴸ_bj γ)
+    #  - 1 ∑_jb(t_ajbi tᴸ_bj γ)
 
     D_ov .+= 2 * s1' +
              2 * einsum("aibj,bj->ia", s2, t1_bar) -
@@ -117,6 +118,7 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
              2 * einsum("aibj,bj->ia", t2, t1_bar) * γ -
              1 * einsum("ajbi,bj->ia", t2, t1_bar) * γ
 
+    # b:
     #  D1_ia =
     #  + 2 s_ai γ γᴸ
     #
@@ -124,7 +126,7 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
     #  - 2 ∑_jb(s_aj s_bi sᴸ_bj)
     #
     #  + 2 ∑_bj(s_aibj sᴸ_bj γ)
-    #  -   ∑_jb(s_ajbi sᴸ_bj γ)
+    #  - 1 ∑_jb(s_ajbi sᴸ_bj γ)
     #
     #  + 4 ∑_bjck(s_aibj s_ck sᵗ_bjck)
     #  - 4 ∑_jbkc(s_ajbk s_ci sᵗ_bkcj)
@@ -148,27 +150,32 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
              2 * einsum("bick,aj,bjck->ia", t2, s1, s2_t) * γ -
              2 * einsum("ajck,bi,bjck->ia", t2, s1, s2_t) * γ
 
+    # b':
     #  D1_ia = 2 ∑_bj(sᴸ_bj t_aibj)
     #  - ∑_bj(sᴸ_bj t_ajbi)
 
     D_ov .+= 2 * einsum("aibj,bj->ia", t2, s1_bar) -
              1 * einsum("ajbi,bj->ia", t2, s1_bar)
 
+    # b:
     #  D0_ai = 2 ∑_bj(s_bj tᵗ_aibj)
     #  + tᴸ_ai γ
 
+    # b':
     # D1_ai = sᴸ_ai
 
     D_vo .+= t1_bar * γ + 2 * einsum("bj,aibj->ai", s1, t2_t) + s1_bar
 
+    # b:
     # D0_ab = ∑_i(s_bi tᴸ_ai)
     #     + 2 ∑_icj(s_bicj tᵗ_aicj)
     #     + 2 ∑_icj(t_bicj tᵗ_aicj γ)
 
-    D_vv .+= 1 * einsum("bj,ai->ab", s1, t1_bar) +
+    D_vv .+= 1 * einsum("bi,ai->ab", s1, t1_bar) +
              2 * einsum("bicj,aicj->ab", s2, t2_t) +
              2 * einsum("bicj,aicj->ab", t2, t2_t) * γ
 
+    # b:
     #  D1_ab =
     #  +   ∑_i(s_bi sᴸ_ai γ)
     #  + 2 ∑_icj(s_bi s_cj sᵗ_aicj)
@@ -178,6 +185,7 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
              2 * einsum("bi,cj,aicj->ab", s1, s1, s2_t) +
              2 * einsum("bicj,aicj->ab", s2, s2_t) * γ
 
+    # b':
     #  D1_ab = 2 ∑_icj(sᵗ_aicj t_bicj)
 
     D_vv .+= 2 * einsum("aicj,bicj->ab", s2_t, t2)
