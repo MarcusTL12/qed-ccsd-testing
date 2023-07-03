@@ -59,6 +59,7 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
     D_vo = @view D[v, o]
     D_vv = @view D[v, v]
 
+    # b:
     # D0_ij = - ∑_a(s_ai tᴸ_aj)
     # - 2 ∑_abk(s_aibk tᵗ_ajbk)
     # - 2 ∑_abk(t_aibk tᵗ_ajbk γ)
@@ -67,28 +68,30 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
     # + 2 ∑_akbl(δ_ij s_akbl tᵗ_akbl)
     # + 2 δ_ij γ
 
-    # D1_ij = - 2 ∑_abk(sᵗ_ajbk t_aibk)
-    # + 2 δ_ij γᴸ
-
     diag_elem = γ + γ_bar +
                 einsum("ak,ak->", s1, t1_bar) +
                 einsum("akbl,akbl->", s2, t2_t)
 
     for i in o
-        D[i, i] = 2.0 * diag_elem
+        D[i, i] += 2.0 * diag_elem
     end
 
     D_oo .-= 1 * einsum("ai,aj->ij", s1, t1_bar) +
              2 * einsum("aibk,ajbk->ij", s2, t2_t) +
              2 * einsum("aibk,ajbk->ij", t2, t2_t) * γ
 
+    # b:
     #  D1_ij = - 2 ∑_abk(s_ai s_bk sᵗ_ajbk)
     #  - 2 ∑_abk(s_aibk sᵗ_ajbk γ)
     #  - ∑_a(s_ai sᴸ_aj γ)
 
     D_oo .-= 1 * einsum("ai,aj->ij", s1, s1_bar) * γ +
              2 * einsum("ai,bk,ajbk->ij", s1, s1, s2_t) +
-             2 * einsum("ai,bk,ajbk->ij", s1, s1, s2_t)
+             2 * einsum("aibk,ajbk->ij", s2, s2_t) * γ
+
+    # b':
+    # D1_ij = - 2 ∑_abk(sᵗ_ajbk t_aibk)
+    # + 2 δ_ij γᴸ
 
     D_oo .-= 2 * einsum("aibk,ajbk->ij", t2, s2_t)
 

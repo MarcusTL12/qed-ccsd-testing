@@ -68,7 +68,7 @@ function test()
     # println("y:")
     # display(y)
 
-    get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, omega, x, y)
+    E_t1 = get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, omega, x, y)
 
     t1_bar = get_matrix("T1-MULTIPLIERS", out_name)
 
@@ -104,6 +104,8 @@ function test()
 
     display(D_d - D_e)
 
-    @time get_energy_t1_density(mol, pol, C, omega, x, y,
+    E_Λ = @time get_energy_t1_density(mol, pol, C, omega, x, y,
         D_e, D_ep, D_p1, D_p2, d)
+
+    E_t1 - E_Λ
 end
