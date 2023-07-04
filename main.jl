@@ -6,6 +6,47 @@ if !@isdefined pyscf
     einsum = pyscf.lib.einsum
 end
 
+const F = Float64
+const V = Vector{Float64}
+const M = Matrix{Float64}
+const M4 = Array{Float64,4}
+
+mutable struct QED_CCSD_PARAMS
+    mol::PyObject
+    nao::Int
+    nocc::Int
+    nvir::Int
+
+    ω::F
+    coup::F
+    pol::V
+
+    C::M
+    t1::M
+    t2::M4
+    s1::M
+    s2::M4
+    γ::F
+
+    t1_bar::M
+    t2_bar::M4
+    s1_bar::M
+    s2_bar::M4
+    γ_bar::F
+
+    t2_t::M4
+    s2_t::M4
+
+    x::M
+    y::M
+
+    D_e::M
+    D_ep::M
+    D_p1::F
+    D_p2::F
+    d::M4
+end
+
 include("integrals.jl")
 include("get_matrix.jl")
 include("get_vector.jl")
@@ -13,62 +54,22 @@ include("run_eT_tor.jl")
 include("energy.jl")
 include("density.jl")
 
-function test()
-    mol = pyscf.M(atom="""
- H          0.86681        0.60144        5.00000
- H         -0.86681        0.60144        5.00000
- O          0.00000       -0.07579        5.00000
- He         0.10000       -0.02000        7.53000
-""", basis="STO-3G")
-
-    omega = 0.5
-    coup = 0.5
-    # coup = 0.0
-    pol = [0.577350, 0.577350, 0.577350]
-
-    out_name = run_eT_tor(mol, omega, coup, pol)
-    # out_name = "tmp_eT/ccsd"
-
+function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
     pol *= coup
 
     C = get_matrix("MO-coeffs", out_name)
 
-    # println("C:")
-    # display(C)
-
     t1 = get_matrix("T1-AMPLITUDES", out_name)
-
-    # println("t1:")
-    # display(t1)
 
     t2 = unpack_t2(mol, get_vector("T2-AMPLITUDES", out_name))
 
-    # println("t2:")
-    # display(t2)
-
     s1 = get_matrix("S1-AMPLITUDES", out_name)
-
-    # println("s1:")
-    # display(s1)
 
     s2 = unpack_t2(mol, get_vector("S2-AMPLITUDES", out_name))
 
-    # println("s2:")
-    # display(s2)
-
     γ = get_vector("Photon amplitudes", out_name)[1]
 
-    get_energy_ccsd(mol, pol, C, t1, t2, s1, γ, omega)
-
     x, y = construct_t1_transformation(mol, t1)
-
-    # println("x:")
-    # display(x)
-
-    # println("y:")
-    # display(y)
-
-    E_t1 = get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, omega, x, y)
 
     t1_bar = get_matrix("T1-MULTIPLIERS", out_name)
 
@@ -83,29 +84,65 @@ function test()
     t2_t = t2_tilde(t2_bar)
     s2_t = t2_tilde(s2_bar)
 
-    D_e = @time one_electron_density(mol, t2, s1, s2, γ,
-        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+    nao = py"int"(mol.nao)
+    nocc = mol.nelectron ÷ 2
 
-    D_ep = @time one_electron_one_photon(mol, t2, s1, s2, γ,
-        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+    QED_CCSD_PARAMS(
+        mol, nao, nocc, nao - nocc, ω, coup, pol,
+        C, t1, t2, s1, s2, γ,
+        t1_bar, t2_bar, s1_bar, s2_bar, γ_bar,
+        t2_t, s2_t, x, y,
+        zeros(0, 0), zeros(0, 0), 0.0, 0.0, zeros(0, 0, 0, 0)
+    )
+end
 
-    D_p1 = @time photon_density1(mol, t2, s1, s2, γ,
-        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+function QED_CCSD_PARAMS(mol, ω, coup, pol)
+    QED_CCSD_PARAMS(mol, ω, coup, pol, run_eT_tor(mol, ω, coup, pol))
+end
 
-    D_p2 = @time photon_density2(mol, t2, s1, s2, γ,
-        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+function test()
+    mol = pyscf.M(atom="""
+ H          0.86681        0.60144        5.00000
+ H         -0.86681        0.60144        5.00000
+ O          0.00000       -0.07579        5.00000
+ He         0.10000       -0.02000        7.53000
+""", basis="STO-3G")
 
-    @show D_p1 D_p2
+    ω = 0.5
+    coup = 0.5
+    # coup = 0.0
+    pol = [0.577350, 0.577350, 0.577350]
 
-    d = @time two_electron_density(mol, t2, s1, s2, γ,
-        t1_bar, t2_t, s1_bar, s2_t, γ_bar)
+    out_name = "tmp_eT/ccsd"
 
-    D_d = one_electron_from_two_electron(mol, d)
+    pol *= coup
 
-    display(D_d - D_e)
+    p = QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
 
-    E_Λ = @time get_energy_t1_density(mol, pol, C, omega, x, y,
-        D_e, D_ep, D_p1, D_p2, d)
+    # E_t1 = get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, ω, x, y)
+
+    # display(D_d - D_e)
+
+    # E_Λ = @time get_energy_t1_density(mol, pol, C, ω, x, y,
+    #     D_e, D_ep, D_p1, D_p2, d)
+
+    # E_t1 - E_Λ
+
+    @time one_electron_density(p)
+
+    @time one_electron_one_photon(p)
+
+    @time photon_density1(p)
+
+    @time photon_density2(p)
+
+    @time two_electron_density(p)
+
+    @time get_energy_ccsd(p)
+
+    E_t1 = @time get_energy_ccsd_t1_transformed(p)
+
+    E_Λ = @time get_energy_t1_density(p)
 
     E_t1 - E_Λ
 end

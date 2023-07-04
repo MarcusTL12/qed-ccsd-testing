@@ -1,14 +1,23 @@
 # T1 transformed densities
 
-function one_electron_density(mol, t2, s1, s2, γ,
-    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
-    nao = py"int"(mol.nao)
-    nocc = mol.nelectron ÷ 2
+function one_electron_density(p::QED_CCSD_PARAMS)
+    o = 1:p.nocc
+    v = p.nocc+1:p.nao
 
-    o = 1:nocc
-    v = nocc+1:nao
+    t2 = p.t2
+    s1 = p.s1
+    s2 = p.s2
 
-    D = zeros(nao, nao)
+    t1_bar = p.t1_bar
+    t2_t = p.t2_t
+    s1_bar = p.s1_bar
+    s2_t = p.s2_t
+    γ = p.γ
+    γ_bar = p.γ_bar
+
+    p.D_e = zeros(p.nao, p.nao)
+
+    D = p.D_e
 
     D_oo = @view D[o, o]
     D_ov = @view D[o, v]
@@ -44,15 +53,24 @@ function one_electron_density(mol, t2, s1, s2, γ,
     D
 end
 
-function one_electron_one_photon(mol, t2, s1, s2, γ,
-    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
-    nao = py"int"(mol.nao)
-    nocc = mol.nelectron ÷ 2
+function one_electron_one_photon(p::QED_CCSD_PARAMS)
+    o = 1:p.nocc
+    v = p.nocc+1:p.nao
 
-    o = 1:nocc
-    v = nocc+1:nao
+    t2 = p.t2
+    s1 = p.s1
+    s2 = p.s2
 
-    D = zeros(nao, nao)
+    t1_bar = p.t1_bar
+    t2_t = p.t2_t
+    s1_bar = p.s1_bar
+    s2_t = p.s2_t
+    γ = p.γ
+    γ_bar = p.γ_bar
+
+    p.D_ep = zeros(p.nao, p.nao)
+
+    D = p.D_ep
 
     D_oo = @view D[o, o]
     D_ov = @view D[o, v]
@@ -194,38 +212,41 @@ function one_electron_one_photon(mol, t2, s1, s2, γ,
 end
 
 function one_electron_from_two_electron(mol, d)
-    nao = py"int"(mol.nao)
-    nocc = mol.nelectron ÷ 2
-
-    D = einsum("pqrr->pq", d) / (mol.nelectron - 1)
+    einsum("pqrr->pq", d) / (mol.nelectron - 1)
 end
 
 # Calculate ⟨Λ| b† b |CC⟩
-function photon_density1(mol, t2, s1, s2, γ,
-    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
-    γ * γ_bar +
-    einsum("ai,ai->", s1, s1_bar) +
-    einsum("aibj,aibj->", s2, s2_t)
+function photon_density1(p::QED_CCSD_PARAMS)
+    p.D_p1 = p.γ * p.γ_bar +
+             einsum("ai,ai->", p.s1, p.s1_bar) +
+             einsum("aibj,aibj->", p.s2, p.s2_t)
 end
 
 # Calculate ⟨Λ| b† + b |CC⟩
-function photon_density2(mol, t2, s1, s2, γ,
-    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
-
-    γ + γ_bar +
-    einsum("ai,ai->", s1, t1_bar) +
-    einsum("aibj,aibj->", s2, t2_t)
+function photon_density2(p::QED_CCSD_PARAMS)
+    p.D_p2 = p.γ + p.γ_bar +
+             einsum("ai,ai->", p.s1, p.t1_bar) +
+             einsum("aibj,aibj->", p.s2, p.t2_t)
 end
 
-function two_electron_density(mol, t2, s1, s2, γ,
-    t1_bar, t2_t, s1_bar, s2_t, γ_bar)
-    nao = py"int"(mol.nao)
-    nocc = mol.nelectron ÷ 2
+function two_electron_density(p::QED_CCSD_PARAMS)
+    o = 1:p.nocc
+    v = p.nocc+1:p.nao
 
-    o = 1:nocc
-    v = nocc+1:nao
+    t2 = p.t2
+    s1 = p.s1
+    s2 = p.s2
 
-    d = zeros(nao, nao, nao, nao)
+    t1_bar = p.t1_bar
+    t2_t = p.t2_t
+    s1_bar = p.s1_bar
+    s2_t = p.s2_t
+    γ = p.γ
+    γ_bar = p.γ_bar
+
+    p.d = zeros(p.nao, p.nao, p.nao, p.nao)
+
+    d = p.d
 
     d_oooo = @view d[o, o, o, o]
     d_ooov = @view d[o, o, o, v]
