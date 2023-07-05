@@ -45,6 +45,8 @@ mutable struct QED_CCSD_PARAMS
     D_p1::F
     D_p2::F
     d::M4
+
+    κ_bar::M
 end
 
 include("integrals.jl")
@@ -53,6 +55,7 @@ include("get_vector.jl")
 include("run_eT_tor.jl")
 include("energy.jl")
 include("density.jl")
+include("kappa.jl")
 
 function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
     pol *= coup
@@ -92,7 +95,8 @@ function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
         C, t1, t2, s1, s2, γ,
         t1_bar, t2_bar, s1_bar, s2_bar, γ_bar,
         t2_t, s2_t, x, y,
-        zeros(0, 0), zeros(0, 0), 0.0, 0.0, zeros(0, 0, 0, 0)
+        zeros(0, 0), zeros(0, 0), 0.0, 0.0, zeros(0, 0, 0, 0),
+        zeros(0, 0)
     )
 end
 
@@ -144,5 +148,7 @@ function test()
 
     E_Λ = @time get_energy_t1_density(p)
 
-    E_t1 - E_Λ
+    @show E_t1 - E_Λ
+
+    @time solve_kappa_bar(p)
 end
