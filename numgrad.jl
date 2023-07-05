@@ -38,3 +38,19 @@ function numgrad4(mol, omega, coup, pol, i, q, h)
 
     (-ef(2) + 8ef(1) - 8ef(-1) + ef(-2)) / 12h
 end
+
+function numgrad2_int(mol, intname, i, q, h)
+    function int_func(n)
+        perturb_geometry(mol, i, q, n * h).intor(intname)
+    end
+
+    (int_func(1) - int_func(-1)) ./ 2h
+end
+
+function numgrad4_int(mol, intname, i, q, h)
+    function int_func(n)
+        perturb_geometry(mol, i, q, n * h).intor(intname)
+    end
+
+    (-int_func(2) + 8int_func(1) - 8int_func(-1) + int_func(-2)) ./ 12h
+end
