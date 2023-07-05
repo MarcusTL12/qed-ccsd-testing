@@ -19,7 +19,8 @@ function parse_matrix(matstring)
     for m in eachmatch(block_reg, matstring)
         blockstring = m.captures[1]
         if iszero(h)
-            h = parse(Int, last(collect(eachmatch(index_reg, blockstring))).captures[1])
+            h = parse(Int,
+                last(collect(eachmatch(index_reg, blockstring))).captures[1])
         end
 
         numbers = [parse(Float64, m.match)

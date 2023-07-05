@@ -56,6 +56,7 @@ include("run_eT_tor.jl")
 include("energy.jl")
 include("density.jl")
 include("kappa.jl")
+include("numgrad.jl")
 
 function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
     pol *= coup
@@ -113,7 +114,7 @@ function test()
 """, basis="STO-3G")
 
     ω = 0.5
-    coup = 0.5
+    coup = 0.1
     # coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 
@@ -121,7 +122,8 @@ function test()
 
     pol *= coup
 
-    p = QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
+    p = @time QED_CCSD_PARAMS(mol, ω, coup, pol)
+    # p = @time QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
 
     # E_t1 = get_energy_ccsd_t1_transformed(mol, pol, C, t2, s1, γ, ω, x, y)
 
@@ -151,4 +153,26 @@ function test()
     @show E_t1 - E_Λ
 
     @time solve_kappa_bar(p)
+end
+
+function test_numgrad()
+    mol = pyscf.M(atom="""
+ H          0.86681        0.60144        5.00000
+ H         -0.86681        0.60144        5.00000
+ O          0.00000       -0.07579        5.00000
+ He         0.10000       -0.02000        7.53000
+""", basis="STO-3G")
+
+    ω = 0.5
+    coup = 0.1
+    # coup = 0.0
+    pol = [0.577350, 0.577350, 0.577350]
+
+    i = 1
+    q = 3
+
+    g2 = @time numgrad2(mol, ω, coup, pol, i, q, 0.001)
+    g4 = @time numgrad4(mol, ω, coup, pol, i, q, 0.001)
+
+    @show g2 g4
 end

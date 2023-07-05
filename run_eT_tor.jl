@@ -1,4 +1,4 @@
-function make_inp(mol, omega, coup, pol)
+function make_inp(mol, omega, coup, pol, multipliers)
     buf = IOBuffer()
 
     for i in 1:mol.natm
@@ -9,6 +9,27 @@ function make_inp(mol, omega, coup, pol)
     end
 
     geom = String(take!(buf)[1:end-1])
+
+    multipliers_code = if multipliers
+        """
+do
+    ground state
+    mean value
+end do
+    
+hf mean value
+    dipole
+end hf mean value
+    
+cc mean value
+    dipole
+end cc mean value"""
+    else
+        """
+do
+    ground state
+end do"""
+    end
 
     """
 system
@@ -40,18 +61,7 @@ solver cc gs
     energy threshold: 1.0d-10
 end solver cc gs
 
-do
-    ground state
-    mean value
-end do
-
-hf mean value
-    dipole
-end hf mean value
-
-cc mean value
-    dipole
-end cc mean value
+$multipliers_code
 
 qed
     photons:        1
@@ -69,14 +79,16 @@ end geometry
 """
 end
 
-function run_eT_tor(mol, omega, coup, pol)
-    inp = make_inp(mol, omega, coup, pol)
+function run_eT_tor(mol, omega, coup, pol, outdir="tmp_eT/", multipliers=true)
+    inp = make_inp(mol, omega, coup, pol, multipliers)
 
-    open("tmp_eT/ccsd.inp", "w") do io
+    inp_file = joinpath(outdir, "ccsd.inp")
+
+    open(inp_file, "w") do io
         print(io, inp)
     end
 
-    run(`$(homedir())/eT_Tor/build/eT_launch tmp_eT/ccsd.inp --omp 48`)
+    run(`$(homedir())/eT_Tor/build/eT_launch $inp_file --omp 48`)
 
-    "tmp_eT/ccsd"
+    joinpath(outdir, "ccsd")
 end
