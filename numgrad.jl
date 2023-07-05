@@ -41,7 +41,7 @@ end
 
 function numgrad2_int(mol, intname, i, q, h)
     function int_func(n)
-        perturb_geometry(mol, i, q, n * h).intor(intname)
+        perturb_geometry(mol, i, q, n * h).intor(intname, aosym="s8")
     end
 
     (int_func(1) - int_func(-1)) ./ 2h
@@ -49,8 +49,24 @@ end
 
 function numgrad4_int(mol, intname, i, q, h)
     function int_func(n)
-        perturb_geometry(mol, i, q, n * h).intor(intname)
+        perturb_geometry(mol, i, q, n * h).intor(intname, aosym="s8")
     end
 
     (-int_func(2) + 8int_func(1) - 8int_func(-1) + int_func(-2)) ./ 12h
+end
+
+function numgrad4_ao_d(mol, pol, i, q, h)
+    function int_func(n)
+        get_ao_d(perturb_geometry(mol, i, q, n * h), pol)
+    end
+
+    (-int_func(2) + 8int_func(1) - 8int_func(-1) + int_func(-2)) ./ 12h
+end
+
+function numgrad4_e_nuc(mol, i, q, h)
+    function ef(n)
+        perturb_geometry(mol, i, q, n * h).energy_nuc()
+    end
+
+    (-ef(2) + 8ef(1) - 8ef(-1) + ef(-2)) / 12h
 end

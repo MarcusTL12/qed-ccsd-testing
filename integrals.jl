@@ -7,19 +7,17 @@ function get_nuc_dipole(mol, pol)
 end
 
 function get_ao_d(mol, pol)
-    -einsum("qij,q->ij", mol.intor("int1e_r"), pol)
+    d_el = -einsum("qij,q->ij", mol.intor("int1e_r"), pol)
+
+    d_nuc = get_nuc_dipole(mol, pol)
+
+    S = mol.intor("int1e_ovlp")
+
+    d_el + (d_nuc / mol.nelectron) * S
 end
 
 function get_qed_d(mol, pol, C)
-    d_nuc = get_nuc_dipole(mol, pol)
-
-    d_el = C' * get_ao_d(mol, pol) * C
-
-    for i in axes(d_el, 1)
-        d_el[i, i] += d_nuc / mol.nelectron
-    end
-
-    d_el
+    C' * get_ao_d(mol, pol) * C
 end
 
 function get_qed_dipmom(mol, d)
@@ -28,15 +26,15 @@ function get_qed_dipmom(mol, d)
     2sum(d[i, i] for i in 1:nocc)
 end
 
-function get_mo_g(mol, C)
+function get_mo_g(mol, C, int=mol.intor("int2e", aosym="s8"))
     nmo = size(C, 2)
-    reshape(pyscf.ao2mo.incore.full(mol.intor("int2e", aosym="s8"), C,
+    reshape(pyscf.ao2mo.incore.full(int, C,
             compact=false),
         (nmo, nmo, nmo, nmo))
 end
 
-function get_qed_g(mol, C, d)
-    g = get_mo_g(mol, C)
+function get_qed_g(mol, C, d, int=mol.intor("int2e", aosym="s8"))
+    g = get_mo_g(mol, C, int)
 
     g + einsum("ij,kl->ijkl", d, d)
 end

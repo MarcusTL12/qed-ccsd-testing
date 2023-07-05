@@ -57,6 +57,7 @@ include("energy.jl")
 include("density.jl")
 include("kappa.jl")
 include("numgrad.jl")
+include("gradient.jl")
 
 function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
     pol *= coup
@@ -114,7 +115,7 @@ function test()
 """, basis="STO-3G")
 
     ω = 0.5
-    coup = 0.1
+    coup = 0.0
     # coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 
@@ -153,6 +154,15 @@ function test()
     @show E_t1 - E_Λ
 
     @time solve_kappa_bar(p)
+
+    i = 1
+    q = 1
+
+    g_a = @time get_gradient(p, i, q, 0.00001)
+
+    g_n = @time numgrad4(mol, ω, coup, pol, i, q, 0.001)
+
+    @show g_a g_n
 end
 
 function test_numgrad()
