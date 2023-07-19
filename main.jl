@@ -58,6 +58,7 @@ include("density.jl")
 include("kappa.jl")
 include("numgrad.jl")
 include("gradient.jl")
+include("dipole.jl")
 
 function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
     pol *= coup
@@ -115,13 +116,11 @@ function test()
 """, basis="STO-3G")
 
     ω = 0.5
+    # coup = 0.5
     coup = 0.0
-    # coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 
     out_name = "tmp_eT/ccsd"
-
-    pol *= coup
 
     p = @time QED_CCSD_PARAMS(mol, ω, coup, pol)
     # p = @time QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
@@ -135,7 +134,13 @@ function test()
 
     # E_t1 - E_Λ
 
+    D_eT = get_matrix("DENSITY-1e", out_name)
+
     @time one_electron_density(p)
+
+    display(D_eT - p.D_e)
+
+    @show tr(p.D_e)
 
     @time one_electron_one_photon(p)
 
@@ -155,14 +160,16 @@ function test()
 
     @time solve_kappa_bar(p)
 
-    i = 1
-    q = 1
+    @time get_total_dipole(p)
 
-    g_a = @time get_gradient(p, i, q, 0.00001)
+    # i = 1
+    # q = 1
 
-    g_n = @time numgrad4(mol, ω, coup, pol, i, q, 0.001)
+    # g_a = @time get_gradient(p, i, q, 0.00001)
 
-    @show g_a g_n
+    # g_n = @time numgrad4(mol, ω, coup, pol, i, q, 0.001)
+
+    # @show g_a g_n
 end
 
 function test_numgrad()

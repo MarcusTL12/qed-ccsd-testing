@@ -1,0 +1,19 @@
+
+SASQ:
+D0_ij = 2 δ_ij                  density_ccs_ref_ref_oo_ccs
+- 2 ∑_abk(t_aibk ᵗt_ajbk)       density_doubles_mu_ref_oo_doubles (Off by factor 2)
+
+D0_ia = ∑_bj(u_aibj ᴸt_bj)      density_doubles_mu_ref_ov_doubles
+
+D0_ai = ᴸt_ai                   density_ccs_mu_ref_vo_ccs
+
+D0_ab = 2 ∑_icj(t_bicj ᵗt_aicj) density_doubles_mu_ref_vv_doubles (Off by factor 2)
+
+construct_gs_density_doubles:
+    mu_ref_density_terms_doubles:
+        mu_ref_density_terms_ccs:
+            density_ccs_mu_ref_vo_ccs:      ᴸt_ai
+        density_doubles_mu_ref_ov_doubles:  ∑_bj(u_aibj ᴸt_bj)
+        density_doubles_mu_ref_oo_doubles:  - 1 ∑_abk(t_aibk ᵗt_ajbk) (Off by factor 2)
+        density_doubles_mu_ref_vv_doubles:  1 ∑_icj(t_bicj ᵗt_aicj) (Off by factor 2)
+    density_ccs_ref_ref_oo_ccs:             2 δ_ij
