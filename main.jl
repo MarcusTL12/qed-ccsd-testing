@@ -28,6 +28,9 @@ mutable struct QED_CCSD_PARAMS
     s2::M4
     γ::F
 
+    u2::M4
+    v2::M4
+
     t1_bar::M
     t2_bar::M4
     s1_bar::M
@@ -36,6 +39,9 @@ mutable struct QED_CCSD_PARAMS
 
     t2_t::M4
     s2_t::M4
+
+    u2_t::M4
+    v2_t::M4
 
     x::M
     y::M
@@ -69,9 +75,13 @@ function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
 
     t2 = unpack_t2(mol, get_vector("T2-AMPLITUDES", out_name))
 
+    u2 = construct_u2(t2)
+
     s1 = get_matrix("S1-AMPLITUDES", out_name)
 
     s2 = unpack_t2(mol, get_vector("S2-AMPLITUDES", out_name))
+
+    v2 = construct_u2(s2)
 
     γ = get_vector("Photon amplitudes", out_name)[1]
 
@@ -90,14 +100,19 @@ function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
     t2_t = t2_tilde(t2_bar)
     s2_t = t2_tilde(s2_bar)
 
+    u2_t = construct_u2(t2_t)
+    v2_t = construct_u2(s2_t)
+
     nao = py"int"(mol.nao)
     nocc = mol.nelectron ÷ 2
 
     QED_CCSD_PARAMS(
         mol, nao, nocc, nao - nocc, ω, coup, pol,
         C, t1, t2, s1, s2, γ,
+        u2, v2,
         t1_bar, t2_bar, s1_bar, s2_bar, γ_bar,
-        t2_t, s2_t, x, y,
+        t2_t, s2_t, u2_t, v2_t,
+        x, y,
         zeros(0, 0), zeros(0, 0), 0.0, 0.0, zeros(0, 0, 0, 0),
         zeros(0, 0)
     )
@@ -116,7 +131,7 @@ function test()
 """, basis="STO-3G")
 
     ω = 0.5
-    coup = 0.1
+    coup = 0.5
     # coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 
@@ -138,7 +153,7 @@ function test()
 
     @time one_electron_density(p)
 
-    display(D_eT - p.D_e)
+    @show maximum(abs, D_eT - p.D_e)
 
     @show tr(p.D_e)
 
@@ -152,7 +167,7 @@ function test()
 
     D_1e_2e = one_electron_from_two_electron(p.mol, p.d)
 
-    display(D_1e_2e - p.D_e)
+    @show maximum(abs, D_1e_2e - p.D_e)
 
     @time get_energy_ccsd(p)
 

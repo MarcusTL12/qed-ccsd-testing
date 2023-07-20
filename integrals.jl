@@ -114,3 +114,7 @@ function t2_tilde(t2_bar)
 
     t2_tilde
 end
+
+function construct_u2(t2)
+    2.0 .* t2 .- PermutedDimsArray(t2, (1, 4, 3, 2))
+end
