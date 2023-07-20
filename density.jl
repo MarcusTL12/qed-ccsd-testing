@@ -162,35 +162,36 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
 
     # b:
     #  D1_ia =
-    #  + 2 s_ai γ γᴸ
+    #      s_ai (
+    #           + 2 γ γᴸ
+    #           + 2 ∑_bj(s_bj sᴸ_bj)
+    #           + 1 ∑_bjck(s_bjck sᵗ_bjck)
+    #      )
     #
-    #  + 2 ∑_bj(s_ai s_bj sᴸ_bj)
     #  - 2 ∑_jb(s_aj s_bi sᴸ_bj)
     #
-    #  + 2 ∑_bj(s_aibj sᴸ_bj γ)
-    #  - 1 ∑_jb(s_ajbi sᴸ_bj γ)
+    #  + 1 ∑_bj(v_aibj sᴸ_bj γ)
     #
-    #  + 2 ∑_bjck(s_aibj s_ck sᵗ_bjck)
-    #  - 2 ∑_jbkc(s_ajbk s_ci sᵗ_bkcj)
-    #  - 2 ∑_jbck(s_bick s_aj sᵗ_bjck)
-    #  + 1 ∑_bjck(s_bjck s_ai sᵗ_bjck)
-    #  - 1 ∑_jbck(s_ajbi s_ck sᵗ_bjck)
+    #  + 1 ∑_bjck(v_aibj s_ck sᵗ_bjck)
     #
-    #  - 1 ∑_jbck(t_bick s_aj sᵗ_bjck γ)
-    #  - 1 ∑_bjck(t_ajck s_bi sᵗ_bjck γ)
+    #  - 2 ∑_bjck(s_bick s_aj sᵗ_bjck)
+    #  - 2 ∑_bjck(s_akbj s_ci sᵗ_bjck)
+    #
+    #  - 1 ∑_bjck(t_bick s_aj sᵗ_bjck γ)
+    #  - 1 ∑_bjck(t_akbj s_ci sᵗ_bjck γ)
 
-    D_ov .+= 2 * s1' * γ * γ_bar +
-             2 * einsum("ai,bj,bj->ia", s1, s1, s1_bar) -
+    D_ov .+= s1' * (
+                 2 * γ * γ_bar +
+                 2 * s1 ⋅ s1_bar +
+                 1 * s2 ⋅ s2_t
+             ) -
              2 * einsum("aj,bi,bj->ia", s1, s1, s1_bar) +
-             2 * einsum("aibj,bj->ia", s2, s1_bar) * γ -
-             1 * einsum("ajbi,bj->ia", s2, s1_bar) * γ +
-             2 * einsum("aibj,ck,bjck->ia", s2, s1, s2_t) -
-             2 * einsum("ajbk,ci,bkcj->ia", s2, s1, s2_t) -
-             2 * einsum("bick,aj,bjck->ia", s2, s1, s2_t) +
-             1 * einsum("bjck,ai,bjck->ia", s2, s1, s2_t) -
-             1 * einsum("ajbi,ck,bjck->ia", s2, s1, s2_t) -
+             1 * einsum("aibj,bj->ia", v2, s1_bar) * γ +
+             1 * einsum("aibj,ck,bjck->ia", v2, s1, s2_t) -
+             2 * einsum("bick,aj,bjck->ia", s2, s1, s2_t) -
+             2 * einsum("akbj,ci,bjck->ia", s2, s1, s2_t) -
              1 * einsum("bick,aj,bjck->ia", t2, s1, s2_t) * γ -
-             1 * einsum("ajck,bi,bjck->ia", t2, s1, s2_t) * γ
+             1 * einsum("akbj,ci,bjck->ia", t2, s1, s2_t) * γ
 
     # b':
     #  D1_ia = 2 ∑_bj(sᴸ_bj t_aibj)
