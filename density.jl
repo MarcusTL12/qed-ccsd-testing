@@ -397,11 +397,9 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     d_ovvo .+= einsum("aick,bjck->iabj", u2, t2_t)
 
     # d_iabc =
-    # 2 ∑_j(t_aicj tᴸ_bj)
-    # - ∑_j(t_ajci tᴸ_bj)
+    #   ∑_j(u_aicj tᴸ_bj)
 
-    d_ovvv .+= 2 * einsum("aicj,bj->iabc", t2, t1_bar) -
-               1 * einsum("ajci,bj->iabc", t2, t1_bar)
+    d_ovvv .+= einsum("aicj,bj->iabc", u2, t1_bar)
 
     # d_aibj =
     # tᵗ_aibj
