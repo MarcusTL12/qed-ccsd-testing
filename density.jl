@@ -172,10 +172,10 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     #
     #  + 1 ∑_bj(v_aibj sᴸ_bj γ)
     #
-    #  + 1 ∑_bjck(v_aibj s_ck sᵗ_bjck)
+    #  + 1 ∑_bjck(v_aibj sᵗ_bjck s_ck)
     #
-    #  - 2 ∑_bjck(s_bick s_aj sᵗ_bjck)
-    #  - 2 ∑_bjck(s_akbj s_ci sᵗ_bjck)
+    #  - 2 ∑_ckbj(s_akbj s_ci sᵗ_ckbj)
+    #  - 2 ∑_ckbj(s_ckbi s_aj sᵗ_ckbj)
     #
     #  - 1 ∑_bjck(t_bick s_aj sᵗ_bjck γ)
     #  - 1 ∑_bjck(t_akbj s_ci sᵗ_bjck γ)
@@ -188,8 +188,8 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
              2 * einsum("aj,bi,bj->ia", s1, s1, s1_bar) +
              1 * einsum("aibj,bj->ia", v2, s1_bar) * γ +
              1 * einsum("aibj,ck,bjck->ia", v2, s1, s2_t) -
-             2 * einsum("bick,aj,bjck->ia", s2, s1, s2_t) -
              2 * einsum("akbj,ci,bjck->ia", s2, s1, s2_t) -
+             2 * einsum("bick,aj,bjck->ia", s2, s1, s2_t) -
              1 * einsum("bick,aj,bjck->ia", t2, s1, s2_t) * γ -
              1 * einsum("akbj,ci,bjck->ia", t2, s1, s2_t) * γ
 
