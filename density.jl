@@ -454,13 +454,12 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # - 2 δ_jk s_ai γᴸ
     #
     # + 2 ∑_bl(δ_ij v_akbl sᴸ_bl)
-    # - 2 ∑_bl(δ_jk s_aibl sᴸ_bl)
-    # + 1 ∑_lb(δ_jk s_albi sᴸ_bl)
+    # - 1 ∑_bl(δ_jk v_aibl sᴸ_bl)
     #
-    # - 2 ∑_lbcm(δ_ij s_al sᵗ_blcm t_bkcm)
-    # - 2 ∑_blcm(δ_ij s_bk sᵗ_blcm t_alcm)
-    # + 1 ∑_lbcm(δ_jk s_al sᵗ_blcm t_bicm)
-    # + 1 ∑_blcm(δ_jk s_bi sᵗ_blcm t_alcm)
+    # - 2 ∑_lbcm(δ_ij s_al t_bkcm sᵗ_blcm)
+    # - 2 ∑_blcm(δ_ij s_bk t_alcm sᵗ_blcm)
+    # + 1 ∑_lbcm(δ_jk s_al t_bicm sᵗ_blcm)
+    # + 1 ∑_blcm(δ_jk s_bi t_alcm sᵗ_blcm)
     #
     # - 2 ∑_b(s_akbi sᴸ_bj)
     # + 1 ∑_b(s_aibk sᴸ_bj)
@@ -475,28 +474,18 @@ function two_electron_density(p::QED_CCSD_PARAMS)
 
     diag_elem1 = einsum("akbl,bl->ka", v2, s1_bar)
 
-    diag_elem2 = einsum("al,blcm,bkcm->ka", s1, s2_t, t2) +
-                 einsum("bk,blcm,alcm->ka", s1, s2_t, t2)
+    diag_elem2 = einsum("al,bkcm,blcm->ka", s1, t2, s2_t) +
+                 einsum("bk,alcm,blcm->ka", s1, t2, s2_t)
 
     for i in o
         d_ooov[i, i, :, :] .+= 4 * s1' * γ_bar
         d_ooov[:, i, i, :] .-= 2 * s1' * γ_bar
 
-        # d_ooov[i, i, :, :] .+= 2 * diag_elem1
-        # d_ooov[:, i, i, :] .+= 1 * diag_elem1
+        d_ooov[i, i, :, :] .+= 2 * diag_elem1
+        d_ooov[:, i, i, :] .-= 1 * diag_elem1
 
-        # d_ooov[i, i, :, :] .-= 2 * diag_elem2
-        # d_ooov[:, i, i, :] .+= 1 * diag_elem2
-
-        d_ooov[i, i, :, :] .+= 4 * einsum("akbl,bl->ka", s2, s1_bar)
-        d_ooov[i, i, :, :] .-= 2 * einsum("albk,bl->ka", s2, s1_bar)
-        d_ooov[:, i, i, :] .-= 2 * einsum("aibl,bl->ia", s2, s1_bar)
-        d_ooov[:, i, i, :] .+= 1 * einsum("albi,bl->ia", s2, s1_bar)
-
-        d_ooov[i, i, :, :] .-= 2 * einsum("al,blcm,bkcm->ka", s1, s2_t, t2)
-        d_ooov[i, i, :, :] .-= 2 * einsum("bk,blcm,alcm->ka", s1, s2_t, t2)
-        d_ooov[:, i, i, :] .+= 1 * einsum("al,blcm,bicm->ia", s1, s2_t, t2)
-        d_ooov[:, i, i, :] .+= 1 * einsum("bi,blcm,alcm->ia", s1, s2_t, t2)
+        d_ooov[i, i, :, :] .-= 2 * diag_elem2
+        d_ooov[:, i, i, :] .+= 1 * diag_elem2
     end
 
     d_ooov .+= -2 * einsum("akbi,bj->ijka", s2, s1_bar) +
