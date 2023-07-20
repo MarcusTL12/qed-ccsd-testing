@@ -84,13 +84,17 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     v = p.nocc+1:p.nao
 
     t2 = p.t2
+    u2 = p.u2
     s1 = p.s1
     s2 = p.s2
+    v2 = p.v2
 
     t1_bar = p.t1_bar
     t2_t = p.t2_t
+    u2_t = p.u2_t
     s1_bar = p.s1_bar
     s2_t = p.s2_t
+    v2_t = p.v2_t
     γ = p.γ
     γ_bar = p.γ_bar
 
@@ -143,23 +147,18 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     #  D0_ia = 2 s_ai
     #  + 1 ∑_bj(v_aibj tᴸ_bj)
     #
-    #  + 2 ∑_bjck(s_bj t_aick tᵗ_bjck)
+    #  + 1 ∑_bjck(s_bj u_aick tᵗ_bjck)
     #  - 1 ∑_jbck(s_aj t_bick tᵗ_bjck)
     #  - 1 ∑_bjck(s_bi t_ajck tᵗ_bjck)
-    #  - 1 ∑_bjkc(s_bj t_akci tᵗ_bjck)
     #
-    #  + 2 ∑_bj(t_aibj tᴸ_bj γ)
-    #  - 1 ∑_jb(t_ajbi tᴸ_bj γ)
+    #  + 1 ∑_bj(u_aibj tᴸ_bj γ)
 
     D_ov .+= 2 * s1' +
-             2 * einsum("aibj,bj->ia", s2, t1_bar) -
-             1 * einsum("ajbi,bj->ia", s2, t1_bar) +
-             2 * einsum("bj,aick,bjck->ia", s1, t2, t2_t) -
-             1 * einsum("aj,bick,bjck->ia", s1, t2, t2_t) -
-             1 * einsum("bi,ajck,bjck->ia", s1, t2, t2_t) -
-             1 * einsum("bj,akci,bjck->ia", s1, t2, t2_t) +
-             2 * einsum("aibj,bj->ia", t2, t1_bar) * γ -
-             1 * einsum("ajbi,bj->ia", t2, t1_bar) * γ
+             einsum("aibj,bj->ia", v2, t1_bar) +
+             einsum("bj,aick,bjck->ia", s1, u2, t2_t) -
+             einsum("aj,bick,bjck->ia", s1, t2, t2_t) -
+             einsum("bi,ajck,bjck->ia", s1, t2, t2_t) +
+             einsum("aibj,bj->ia", u2, t1_bar) * γ
 
     # b:
     #  D1_ia =
