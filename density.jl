@@ -453,8 +453,7 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 4 δ_ij s_ak γᴸ
     # - 2 δ_jk s_ai γᴸ
     #
-    # + 4 ∑_bl(δ_ij s_akbl sᴸ_bl)
-    # - 2 ∑_lb(δ_ij s_albk sᴸ_bl)
+    # + 2 ∑_bl(δ_ij v_akbl sᴸ_bl)
     # - 2 ∑_bl(δ_jk s_aibl sᴸ_bl)
     # + 1 ∑_lb(δ_jk s_albi sᴸ_bl)
     #
@@ -474,8 +473,7 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 1 ∑_bcl(s_bk sᵗ_bjcl t_aicl)
     # + 1 ∑_blc(s_bk sᵗ_blcj t_alci)
 
-    diag_elem1 = 2 * einsum("akbl,bl->ka", s2, s1_bar) -
-                 1 * einsum("albk,bl->ka", s2, s1_bar)
+    diag_elem1 = einsum("akbl,bl->ka", v2, s1_bar)
 
     diag_elem2 = einsum("al,blcm,bkcm->ka", s1, s2_t, t2) +
                  einsum("bk,blcm,alcm->ka", s1, s2_t, t2)
