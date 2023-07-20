@@ -496,9 +496,9 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                1 * einsum("ai,bkcl,bjcl->ijka", s1, t2, s2_t)
 
     # d_ijak =
-    # - ∑_b(s_bi sᵗ_akbj)
+    # - ∑_b(s_bi sᵗ_bjak)
 
-    d_oovo .-= einsum("bi,akbj->ijak", s1, s2_t)
+    d_oovo .-= einsum("bi,bjak->ijak", s1, s2_t)
 
     # d_ijab =
     # + 2 ∑_k(δ_ij s_bk sᴸ_ak)
