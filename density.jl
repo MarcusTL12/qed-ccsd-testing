@@ -325,8 +325,7 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 2 ∑_bl(δ_ij u_akbl tᴸ_bl)
     # -   ∑_bl(δ_jk u_aibl tᴸ_bl)
     #
-    # +   ∑_b(t_aibk tᴸ_bj)
-    # - 2 ∑_b(t_akbi tᴸ_bj)
+    # -   ∑_b(u_akbi tᴸ_bj)
 
     diag_elem = einsum("aibl,bl->ia", u2, t1_bar)
 
@@ -335,8 +334,7 @@ function two_electron_density(p::QED_CCSD_PARAMS)
         d_ooov[:, i, i, :] .-= diag_elem
     end
 
-    d_ooov .+= 1 * einsum("aibk,bj->ijka", t2, t1_bar) -
-               2 * einsum("akbi,bj->ijka", t2, t1_bar)
+    d_ooov .-= einsum("akbi,bj->ijka", u2, t1_bar)
 
     # d_ijak =
     # + 2 δ_ij tᴸ_ak
