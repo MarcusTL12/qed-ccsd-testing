@@ -24,36 +24,56 @@ function one_electron_density(p::QED_CCSD_PARAMS)
     D_vo = @view D[v, o]
     D_vv = @view D[v, v]
 
+    # D0:
+
+    # D0_ij = 2 δ_ij
+    # - ∑_abk(t_aibk ᵗt_ajbk)
+
     for i in o
         D[i, i] = 2.0
     end
 
-    # D0:
-
     D_oo .-= 1 * einsum("aibk,ajbk->ij", t2, t2_t)
+
+    # D0_ia = ∑_bj(u_aibj ᴸt_bj)
 
     D_ov .+= 2 * einsum("aibj,bj->ia", t2, t1_bar) -
              1 * einsum("ajbi,bj->ia", t2, t1_bar)
 
+    # D0_ai = ᴸt_ai
+
     D_vo .+= t1_bar
+
+    # D0_ab = ∑_icj(t_bicj ᵗt_aicj)
 
     D_vv .+= 1 * einsum("bicj,aicj->ab", t2, t2_t)
 
-    display(D)
-
     # D1:
 
-    D_oo .-= 1 * einsum("ai,aj->ij", s1, s1_bar) +
-             2 * einsum("aibk,ajbk->ij", s2, s2_t)
+    # D1_ij = - ∑_a(s_ai ᴸs_aj)
+    # - ∑_abk(s_aibk ᵗs_ajbk)
+
+    D_oo .-= einsum("ai,aj->ij", s1, s1_bar) +
+             einsum("aibk,ajbk->ij", s2, s2_t)
+
+    # D1_ia = 2 s_ai ᴸγ
+    # + 2 ∑_bj(s_aibj ᴸs_bj)
+    # - 1 ∑_jb(s_ajbi ᴸs_bj)
+    # - 1 ∑_jbck(s_aj t_bick ᵗs_bjck)
+    # - 1 ∑_bjck(s_bi t_ajck ᵗs_bjck)
 
     D_ov .+= 2 * s1' * γ_bar +
-             1 * einsum("aibj,bj->ia", s2, s1_bar) -
+             2 * einsum("aibj,bj->ia", s2, s1_bar) -
              1 * einsum("ajbi,bj->ia", s2, s1_bar) -
-             1 * einsum("aj,bjck,bick->ia", s1, s2_t, t2) -
-             1 * einsum("bi,bjck,ajck->ia", s1, s2_t, t2)
+             1 * einsum("aj,bick,bjck->ia", s1, t2, s2_t) -
+             1 * einsum("bi,ajck,bjck->ia", s1, t2, s2_t)
 
-    D_vv .+= 1 * einsum("bi,ai->ab", s1, s1_bar) +
-             1 * einsum("bicj,aicj->ab", s2, s2_t)
+    # D1_ab =
+    #   ∑_i(s_bi ᴸs_ai)
+    # + ∑_icj(s_bicj ᵗs_aicj)
+
+    D_vv .+= einsum("bi,ai->ab", s1, s1_bar) +
+             einsum("bicj,aicj->ab", s2, s2_t)
 
     D
 end
@@ -91,12 +111,12 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     # + ∑_akbl(δ_ij s_akbl tᵗ_akbl)
     # + 2 δ_ij γ
 
-    diag_elem = γ + γ_bar +
-                einsum("ak,ak->", s1, t1_bar) +
-                einsum("akbl,akbl->", s2, t2_t)
+    diag_elem = 2.0 * γ + 2.0 * γ_bar +
+                2.0 * einsum("ak,ak->", s1, t1_bar) +
+                1.0 * einsum("akbl,akbl->", s2, t2_t)
 
     for i in o
-        D[i, i] += 2.0 * diag_elem
+        D[i, i] += diag_elem
     end
 
     D_oo .-= 1 * einsum("ai,aj->ij", s1, t1_bar) +
@@ -224,14 +244,14 @@ end
 function photon_density1(p::QED_CCSD_PARAMS)
     p.D_p1 = p.γ * p.γ_bar +
              einsum("ai,ai->", p.s1, p.s1_bar) +
-             einsum("aibj,aibj->", p.s2, p.s2_t)
+             0.5 * einsum("aibj,aibj->", p.s2, p.s2_t)
 end
 
 # Calculate ⟨Λ| b† + b |CC⟩
 function photon_density2(p::QED_CCSD_PARAMS)
     p.D_p2 = p.γ + p.γ_bar +
              einsum("ai,ai->", p.s1, p.t1_bar) +
-             einsum("aibj,aibj->", p.s2, p.t2_t)
+             0.5 * einsum("aibj,aibj->", p.s2, p.t2_t)
 end
 
 function two_electron_density(p::QED_CCSD_PARAMS)

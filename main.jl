@@ -116,8 +116,8 @@ function test()
 """, basis="STO-3G")
 
     ω = 0.5
-    # coup = 0.5
-    coup = 0.0
+    coup = 0.1
+    # coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 
     out_name = "tmp_eT/ccsd"
@@ -149,6 +149,10 @@ function test()
     @time photon_density2(p)
 
     @time two_electron_density(p)
+
+    D_1e_2e = one_electron_from_two_electron(p.mol, p.d)
+
+    display(D_1e_2e - p.D_e)
 
     @time get_energy_ccsd(p)
 
