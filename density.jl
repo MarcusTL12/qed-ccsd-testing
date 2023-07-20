@@ -461,16 +461,15 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 1 ∑_lbcm(δ_jk s_al t_bicm sᵗ_blcm)
     # + 1 ∑_blcm(δ_jk s_bi t_alcm sᵗ_blcm)
     #
-    # - 2 ∑_b(s_akbi sᴸ_bj)
-    # + 1 ∑_b(s_aibk sᴸ_bj)
+    # - 1 ∑_b(v_akbi sᴸ_bj)
     #
-    # - 2 ∑_bcl(s_ak sᵗ_bjcl t_bicl)
-    # + 1 ∑_bcl(s_ai sᵗ_bjcl t_bkcl)
-    # + 1 ∑_lbc(s_al sᵗ_bjcl t_bick)
-    # - 2 ∑_bcl(s_bi sᵗ_bjcl t_akcl)
-    # + 1 ∑_bcl(s_bi sᵗ_bjcl t_alck)
-    # + 1 ∑_bcl(s_bk sᵗ_bjcl t_aicl)
-    # + 1 ∑_blc(s_bk sᵗ_blcj t_alci)
+    # - 2 s_ak ∑_bcl(t_bicl sᵗ_bjcl)
+    # + 1 s_ai ∑_bcl(t_bkcl sᵗ_bjcl)
+    #
+    # - 1 ∑_bcl(s_bi u_akcl sᵗ_bjcl)
+    # + 1 ∑_bcl(s_al t_bick sᵗ_bjcl)
+    # + 1 ∑_bcl(s_bk t_aicl sᵗ_bjcl)
+    # + 1 ∑_bcl(s_ck t_albi sᵗ_bjcl)
 
     diag_elem1 = einsum("akbl,bl->ka", v2, s1_bar)
 
@@ -488,15 +487,13 @@ function two_electron_density(p::QED_CCSD_PARAMS)
         d_ooov[:, i, i, :] .+= 1 * diag_elem2
     end
 
-    d_ooov .+= -2 * einsum("akbi,bj->ijka", s2, s1_bar) +
-               1 * einsum("aibk,bj->ijka", s2, s1_bar) -
-               2 * einsum("ak,bjcl,bicl->ijka", s1, s2_t, t2) +
-               1 * einsum("ai,bjcl,bkcl->ijka", s1, s2_t, t2) +
-               1 * einsum("al,bjcl,bick->ijka", s1, s2_t, t2) -
-               2 * einsum("bi,bjcl,akcl->ijka", s1, s2_t, t2) +
-               1 * einsum("bi,bjcl,alck->ijka", s1, s2_t, t2) +
-               1 * einsum("bk,bjcl,aicl->ijka", s1, s2_t, t2) +
-               1 * einsum("bk,blcj,alci->ijka", s1, s2_t, t2)
+    d_ooov .+= -1 * einsum("akbi,bj->ijka", v2, s1_bar) -
+               1 * einsum("bi,akcl,bjcl->ijka", s1, u2, s2_t) +
+               1 * einsum("al,bick,bjcl->ijka", s1, t2, s2_t) +
+               1 * einsum("bk,aicl,bjcl->ijka", s1, t2, s2_t) +
+               1 * einsum("ck,albi,bjcl->ijka", s1, t2, s2_t) -
+               2 * einsum("ak,bicl,bjcl->ijka", s1, t2, s2_t) +
+               1 * einsum("ai,bkcl,bjcl->ijka", s1, t2, s2_t)
 
     # d_ijak =
     # - ∑_b(s_bi sᵗ_akbj)
