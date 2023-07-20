@@ -194,11 +194,9 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
              1 * einsum("akbj,ci,bjck->ia", t2, s1, s2_t) * γ
 
     # b':
-    #  D1_ia = 2 ∑_bj(sᴸ_bj t_aibj)
-    #  - ∑_bj(sᴸ_bj t_ajbi)
+    #  D1_ia = ∑_bj(u_aibj sᴸ_bj)
 
-    D_ov .+= 2 * einsum("aibj,bj->ia", t2, s1_bar) -
-             1 * einsum("ajbi,bj->ia", t2, s1_bar)
+    D_ov .+= einsum("aibj,bj->ia", u2, s1_bar)
 
     # b:
     #  D0_ai = ∑_bj(s_bj tᵗ_aibj)
