@@ -531,10 +531,10 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # - 1 ∑_ck(s_ci u_akbj sᴸ_ck)
     # - 1 ∑_ck(s_cj u_aibk sᴸ_ck)
     #
+    # + 1 ∑_ckdl(v_aick u_bjdl sᵗ_ckdl)
+    # + 1 ∑_ckdl(v_bjck u_aidl sᵗ_ckdl)
     # - 2 ∑_kcdl(s_aibk t_cjdl sᵗ_ckdl)
     # - 2 ∑_ckdl(s_aicj t_bkdl sᵗ_ckdl)
-    # + 4 ∑_ckdl(s_aick t_bjdl sᵗ_ckdl)
-    # - 2 ∑_ckdl(s_aick t_bldj sᵗ_ckdl)
     # + 1 ∑_kcdl(s_ajbk t_cidl sᵗ_ckdl)
     # + 1 ∑_ckdl(s_ajci t_bkdl sᵗ_ckdl)
     # - 2 ∑_ckdl(s_ajck t_bidl sᵗ_ckdl)
@@ -542,8 +542,6 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 1 ∑_kcdl(s_akbi t_cjdl sᵗ_ckdl)
     # - 2 ∑_kcdl(s_akbj t_cidl sᵗ_ckdl)
     # + 1 ∑_klcd(s_akbl t_cidj sᵗ_ckdl)
-    # - 2 ∑_kcdl(s_akci t_bjdl sᵗ_ckdl)
-    # + 1 ∑_kcdl(s_akci t_bldj sᵗ_ckdl)
     # + 1 ∑_kcdl(s_akcj t_bidl sᵗ_ckdl)
     # + 1 ∑_kcld(s_alcj t_bkdi sᵗ_ckdl)
     # + 1 ∑_kcld(s_alck t_bidj sᵗ_ckdl)
@@ -552,12 +550,8 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # - 2 ∑_ckdl(s_bick t_ajdl sᵗ_ckdl)
     # + 1 ∑_ckdl(s_bick t_aldj sᵗ_ckdl)
     # - 2 ∑_ckdl(s_bjci t_akdl sᵗ_ckdl)
-    # + 4 ∑_ckdl(s_bjck t_aidl sᵗ_ckdl)
-    # - 2 ∑_ckdl(s_bjck t_aldi sᵗ_ckdl)
     # + 1 ∑_kcdl(s_bkci t_ajdl sᵗ_ckdl)
     # + 1 ∑_kcld(s_blci t_akdj sᵗ_ckdl)
-    # - 2 ∑_kcdl(s_bkcj t_aidl sᵗ_ckdl)
-    # + 1 ∑_kcdl(s_bkcj t_aldi sᵗ_ckdl)
     # - 2 ∑_kcld(s_blck t_aidj sᵗ_ckdl)
     # + 1 ∑_kcld(s_blck t_ajdi sᵗ_ckdl)
     # + 1 ∑_cdkl(s_cidj t_akbl sᵗ_ckdl)
@@ -574,20 +568,18 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                1 * einsum("bi,ajck,ck->iajb", s1, u2, s1_bar) -
                1 * einsum("bk,aicj,ck->iajb", s1, u2, s1_bar) -
                1 * einsum("ci,akbj,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("cj,aibk,ck->iajb", s1, u2, s1_bar) -
+               1 * einsum("cj,aibk,ck->iajb", s1, u2, s1_bar) +
+               1 * einsum("aick,bjdl,ckdl->iajb", v2, u2, s2_t) +
+               1 * einsum("bjck,aidl,ckdl->iajb", v2, u2, s2_t) -
                2 * einsum("aibk,cjdl,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("aicj,bkdl,ckdl->iajb", s2, t2, s2_t) +
-               4 * einsum("aick,bjdl,ckdl->iajb", s2, t2, s2_t) -
-               2 * einsum("aick,bldj,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("ajbk,cidl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("ajci,bkdl,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("ajck,bidl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("ajck,bldi,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("akbi,cjdl,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("akbj,cidl,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("akbl,cidj,ckdl->iajb", s2, t2, s2_t) -
-               2 * einsum("akci,bjdl,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("akci,bldj,ckdl->iajb", s2, t2, s2_t) +
+               1 * einsum("akbl,cidj,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("akcj,bidl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("alcj,bkdi,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("alck,bidj,ckdl->iajb", s2, t2, s2_t) -
@@ -596,12 +588,8 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                2 * einsum("bick,ajdl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("bick,aldj,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("bjci,akdl,ckdl->iajb", s2, t2, s2_t) +
-               4 * einsum("bjck,aidl,ckdl->iajb", s2, t2, s2_t) -
-               2 * einsum("bjck,aldi,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("bkci,ajdl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("blci,akdj,ckdl->iajb", s2, t2, s2_t) -
-               2 * einsum("bkcj,aidl,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("bkcj,aldi,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("blck,aidj,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("blck,ajdi,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("cidj,akbl,ckdl->iajb", s2, t2, s2_t) +
