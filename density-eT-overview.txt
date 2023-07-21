@@ -23,8 +23,7 @@ D1_ij = - ∑_a(s_ai ᴸs_aj)       density_qed_ccsd_s_mu_ref_oo
 - ∑_abk(s_aibk ᵗs_ajbk)         density_doubles_mu_ref_oo
 
 D1_ia = 2 s_ai ᴸγ               density_qed_ccsd_s_ph_ref_ov
-+ 2 ∑_bj(s_aibj ᴸs_bj)          density_doubles_mu_ref_ov
--   ∑_jb(s_ajbi ᴸs_bj)          ^^^^^^^^^^^^^^^^^^^^^^^^^
++   ∑_bj(v_aibj ᴸs_bj)          density_doubles_mu_ref_ov
 -   ∑_jbck(s_aj t_bick ᵗs_bjck) ???
 -   ∑_bjck(s_bi t_ajck ᵗs_bjck) ???
 
@@ -39,6 +38,6 @@ construct_gs_density_qed_ccsd_sd:
         density_qed_ccsd_s_mu_ref_oo:   - ∑_a(s_ai ᴸs_aj)
         density_qed_ccsd_s_mu_ref_vv:     ∑_i(s_bi ᴸs_ai)
         density_qed_ccsd_s_ph_ref_ov:   2 s_ai ᴸγ
-    density_doubles_mu_ref_ov:          2 ∑_bj(s_aibj ᴸs_bj) - ∑_jb(s_ajbi ᴸs_bj)
+    density_doubles_mu_ref_ov:            ∑_bj(v_aibj ᴸs_bj)
     density_doubles_mu_ref_oo:          - ∑_abk(s_aibk ᵗs_ajbk)
     density_doubles_mu_ref_vv:            ∑_icj(s_bicj ᵗs_aicj)

@@ -61,20 +61,20 @@ function one_electron_density(p::QED_CCSD_PARAMS)
 
     # D1_ia = 2 s_ai ᴸγ
     # + 1 ∑_bj(v_aibj ᴸs_bj)
-    # - 1 ∑_jbck(s_aj t_bick ᵗs_bjck)
-    # - 1 ∑_bjck(s_bi t_ajck ᵗs_bjck)
+    # - 1 ∑_jbck(s_aj t_ckbi ᵗs_ckbj)
+    # - 1 ∑_bjck(s_bi t_ckaj ᵗs_ckbj)
 
-    D_ov .+= 2 * s1' * γ_bar +
-             1 * einsum("aibj,bj->ia", v2, s1_bar) -
-             1 * einsum("aj,bick,bjck->ia", s1, t2, s2_t) -
-             1 * einsum("bi,ajck,bjck->ia", s1, t2, s2_t)
+    D_ov .+= 2 * s1' * γ_bar
+    D_ov .+= 1 * einsum("aibj,bj->ia", v2, s1_bar)
+    D_ov .-= 1 * einsum("aj,bick,bjck->ia", s1, t2, s2_t)
+    D_ov .-= 1 * einsum("bi,ajck,bjck->ia", s1, t2, s2_t)
 
     # D1_ab =
     #   ∑_i(s_bi ᴸs_ai)
     # + ∑_icj(s_bicj ᵗs_aicj)
 
-    D_vv .+= einsum("bi,ai->ab", s1, s1_bar) +
-             einsum("bicj,aicj->ab", s2, s2_t)
+    D_vv .+= einsum("bi,ai->ab", s1, s1_bar)
+    D_vv .+= einsum("bicj,aicj->ab", s2, s2_t)
 
     D
 end
