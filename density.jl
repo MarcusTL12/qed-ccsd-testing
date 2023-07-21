@@ -597,26 +597,22 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                1 * einsum("aick,bjck->iabj", v2, s2_t)
 
     # d_iabc =
-    # + 2 ∑_j(s_aicj sᴸ_bj)
-    # - 1 ∑_j(s_ajci sᴸ_bj)
+    # + 1 ∑_j(v_aicj sᴸ_bj)
     #
-    # + 2 ∑_jdk(s_ai sᵗ_bjdk t_cjdk)
-    # - 1 ∑_jdk(s_aj sᵗ_bjdk t_cidk)
-    # - 1 ∑_jkd(s_aj sᵗ_bkdj t_ckdi)
-    # - 1 ∑_jdk(s_ci sᵗ_bjdk t_ajdk)
-    # + 2 ∑_jdk(s_cj sᵗ_bjdk t_aidk)
-    # - 1 ∑_jdk(s_cj sᵗ_bjdk t_akdi)
-    # - 1 ∑_djk(s_di sᵗ_bjdk t_akcj)
+    # + 1 ∑_jdk(s_cj u_aidk sᵗ_bjdk)
+    # + 2 ∑_jdk(s_ai t_cjdk sᵗ_bjdk)
+    # - 1 ∑_jdk(s_ci t_ajdk sᵗ_bjdk)
+    # - 1 ∑_jdk(s_aj t_cidk sᵗ_bjdk)
+    # - 1 ∑_jdk(s_ak t_cjdi sᵗ_bjdk)
+    # - 1 ∑_jdk(s_di t_akcj sᵗ_bjdk)
 
-    d_ovvv .+= 2 * einsum("aicj,bj->iabc", s2, s1_bar) -
-               1 * einsum("ajci,bj->iabc", s2, s1_bar) +
-               2 * einsum("ai,bjdk,cjdk->iabc", s1, s2_t, t2) -
-               1 * einsum("aj,bjdk,cidk->iabc", s1, s2_t, t2) -
-               1 * einsum("aj,bkdj,ckdi->iabc", s1, s2_t, t2) -
-               1 * einsum("ci,bjdk,ajdk->iabc", s1, s2_t, t2) +
-               2 * einsum("cj,bjdk,aidk->iabc", s1, s2_t, t2) -
-               1 * einsum("cj,bjdk,akdi->iabc", s1, s2_t, t2) -
-               1 * einsum("di,bjdk,akcj->iabc", s1, s2_t, t2)
+    d_ovvv .+= 1 * einsum("aicj,bj->iabc", v2, s1_bar) +
+               1 * einsum("cj,aidk,bjdk->iabc", s1, u2, s2_t) +
+               2 * einsum("ai,cjdk,bjdk->iabc", s1, t2, s2_t) -
+               1 * einsum("ci,ajdk,bjdk->iabc", s1, t2, s2_t) -
+               1 * einsum("aj,cidk,bjdk->iabc", s1, t2, s2_t) -
+               1 * einsum("ak,cjdi,bjdk->iabc", s1, t2, s2_t) -
+               1 * einsum("di,akcj,bjdk->iabc", s1, t2, s2_t)
 
     # d_aibc =
     # ∑_j(s_cj sᵗ_aibj)
