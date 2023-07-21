@@ -131,7 +131,7 @@ function test()
 """, basis="STO-3G")
 
     ω = 0.5
-    coup = 0.5
+    coup = 0.8
     # coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 

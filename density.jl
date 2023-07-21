@@ -589,9 +589,9 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                2 * einsum("akci,bjdl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("akci,bldj,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("akcj,bidl,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("akcj,bldi,cldk->iajb", s2, t2, s2_t) +
-               1 * einsum("akcl,bidj,cldk->iajb", s2, t2, s2_t) -
-               2 * einsum("akcl,bjdi,cldk->iajb", s2, t2, s2_t) +
+               1 * einsum("alcj,bkdi,ckdl->iajb", s2, t2, s2_t) +
+               1 * einsum("alck,bidj,ckdl->iajb", s2, t2, s2_t) -
+               2 * einsum("alck,bjdi,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("bicj,akdl,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("bick,ajdl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("bick,aldj,ckdl->iajb", s2, t2, s2_t) -
@@ -599,16 +599,16 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                4 * einsum("bjck,aidl,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("bjck,aldi,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("bkci,ajdl,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("bkci,aldj,cldk->iajb", s2, t2, s2_t) -
+               1 * einsum("blci,akdj,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("bkcj,aidl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("bkcj,aldi,ckdl->iajb", s2, t2, s2_t) -
-               2 * einsum("bkcl,aidj,cldk->iajb", s2, t2, s2_t) +
-               1 * einsum("bkcl,ajdi,cldk->iajb", s2, t2, s2_t) +
+               2 * einsum("blck,aidj,ckdl->iajb", s2, t2, s2_t) +
+               1 * einsum("blck,ajdi,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("cidj,akbl,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("cidk,ajbl,cldk->iajb", s2, t2, s2_t) -
-               2 * einsum("cidk,albj,cldk->iajb", s2, t2, s2_t) -
-               2 * einsum("cjdk,aibl,cldk->iajb", s2, t2, s2_t) +
-               1 * einsum("cjdk,albi,cldk->iajb", s2, t2, s2_t)
+               1 * einsum("cidl,ajbk,ckdl->iajb", s2, t2, s2_t) -
+               2 * einsum("cidl,akbj,ckdl->iajb", s2, t2, s2_t) -
+               2 * einsum("cjdl,aibk,ckdl->iajb", s2, t2, s2_t) +
+               1 * einsum("cjdl,akbi,ckdl->iajb", s2, t2, s2_t)
 
     # d_iabj =
     # 2 s_ai sᴸ_bj
