@@ -567,20 +567,14 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 1 ∑_cdkl(s_cjdk t_albi sᵗ_cldk)
 
     d_ovov .+= 2 * permutedims(v2, (2, 1, 4, 3)) * γ_bar +
-               2 * einsum("ai,bjck,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("aj,bick,ck->iajb", s1, u2, s1_bar) +
-               1 * einsum("ak,bicj,ck->iajb", s1, t2, s1_bar) -
-               2 * einsum("ak,bjci,ck->iajb", s1, t2, s1_bar) -
-               2 * einsum("bi,ajck,ck->iajb", s1, t2, s1_bar) +
-               1 * einsum("bi,akcj,ck->iajb", s1, t2, s1_bar) +
-               4 * einsum("bj,aick,ck->iajb", s1, t2, s1_bar) -
-               2 * einsum("bj,akci,ck->iajb", s1, t2, s1_bar) -
-               2 * einsum("bk,aicj,ck->iajb", s1, t2, s1_bar) +
-               1 * einsum("bk,ajci,ck->iajb", s1, t2, s1_bar) +
-               1 * einsum("ci,ajbk,ck->iajb", s1, t2, s1_bar) -
-               2 * einsum("ci,akbj,ck->iajb", s1, t2, s1_bar) -
-               2 * einsum("cj,aibk,ck->iajb", s1, t2, s1_bar) +
-               1 * einsum("cj,akbi,ck->iajb", s1, t2, s1_bar) -
+               2 * einsum("ai,bjck,ck->iajb", s1, u2, s1_bar) +
+               2 * einsum("bj,aick,ck->iajb", s1, u2, s1_bar) -
+               1 * einsum("aj,bick,ck->iajb", s1, u2, s1_bar) -
+               1 * einsum("ak,bjci,ck->iajb", s1, u2, s1_bar) -
+               1 * einsum("bi,ajck,ck->iajb", s1, u2, s1_bar) -
+               1 * einsum("bk,aicj,ck->iajb", s1, u2, s1_bar) -
+               1 * einsum("ci,akbj,ck->iajb", s1, u2, s1_bar) -
+               1 * einsum("cj,aibk,ck->iajb", s1, u2, s1_bar) -
                2 * einsum("aibk,cjdl,ckdl->iajb", s2, t2, s2_t) -
                2 * einsum("aicj,bkdl,ckdl->iajb", s2, t2, s2_t) +
                4 * einsum("aick,bjdl,ckdl->iajb", s2, t2, s2_t) -
