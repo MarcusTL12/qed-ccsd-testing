@@ -124,24 +124,27 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
         D[i, i] += diag_elem
     end
 
-    D_oo .-= einsum("ai,aj->ij", s1, t1_bar) +
-             einsum("aibk,ajbk->ij", s2, t2_t) +
-             einsum("aibk,ajbk->ij", t2, t2_t) * γ
+    # These can be fused
+    D_oo .-= einsum("ai,aj->ij", s1, t1_bar)
+    D_oo .-= einsum("ai,aj->ij", s1, s1_bar) * γ
+    D_oo .-= einsum("ai,bk,ajbk->ij", s1, s1, s2_t)
+
+    # These can be fused
+    D_oo .-= einsum("aibk,ajbk->ij", s2, t2_t)
+    D_oo .-= einsum("aibk,ajbk->ij", t2, t2_t) * γ
 
     # b:
     #  D1_ij = - ∑_abk(s_ai s_bk sᵗ_ajbk)
     #  - ∑_abk(s_aibk sᵗ_ajbk γ)
     #  - ∑_a(s_ai sᴸ_aj γ)
 
-    D_oo .-= einsum("ai,aj->ij", s1, s1_bar) * γ +
-             einsum("ai,bk,ajbk->ij", s1, s1, s2_t) +
-             einsum("aibk,ajbk->ij", s2, s2_t) * γ
+    # These can be fused
+    D_oo .-= einsum("aibk,ajbk->ij", t2, s2_t)
+    D_oo .-= einsum("aibk,ajbk->ij", s2, s2_t) * γ
 
     # b':
     # D1_ij = - ∑_abk(sᵗ_ajbk t_aibk)
     # + 2 δ_ij γᴸ
-
-    D_oo .-= einsum("aibk,ajbk->ij", t2, s2_t)
 
     # b:
     #  D0_ia = 2 s_ai
@@ -153,12 +156,32 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     #
     #  + 1 ∑_bj(u_aibj tᴸ_bj γ)
 
-    D_ov .+= 2 * s1' +
-             einsum("aibj,bj->ia", v2, t1_bar) +
-             einsum("bj,aick,bjck->ia", s1, u2, t2_t) -
-             einsum("aj,bick,bjck->ia", s1, t2, t2_t) -
-             einsum("bi,ajck,bjck->ia", s1, t2, t2_t) +
-             einsum("aibj,bj->ia", u2, t1_bar) * γ
+    D_ov .+= s1' * (
+        2 +
+        2 * γ * γ_bar +
+        2 * s1 ⋅ s1_bar +
+        1 * s2 ⋅ s2_t
+    )
+
+    D_ov .-= 2 * einsum("aj,bi,bj->ia", s1, s1, s1_bar)
+
+    # Can be fused
+    D_ov .+= einsum("aibj,bj->ia", v2, t1_bar)
+    D_ov .+= einsum("aibj,bj->ia", v2, s1_bar) * γ
+    D_ov .+= einsum("aibj,ck,ckbj->ia", v2, s1, s2_t)
+
+    # Can be fused
+    D_ov .+= einsum("aibj,bj->ia", u2, s1_bar)
+    D_ov .+= einsum("aibj,bj->ia", u2, t1_bar) * γ
+    D_ov .+= einsum("aibj,ck,ckbj->ia", u2, s1, t2_t)
+
+    D_ov .-= einsum("aj,bick,bjck->ia", s1, t2, t2_t)
+    D_ov .-= einsum("aj,bick,bjck->ia", s1, t2, s2_t) * γ
+    D_ov .-= einsum("aj,bick,bjck->ia", s1, s2, s2_t) * 2
+
+    D_ov .-= einsum("bi,ajck,bjck->ia", s1, t2, t2_t)
+    D_ov .-= einsum("bi,ajck,bjck->ia", s1, t2, s2_t) * γ
+    D_ov .-= einsum("bi,ajck,bjck->ia", s1, s2, s2_t) * 2
 
     # b:
     #  D1_ia =
@@ -180,23 +203,8 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     #  - 1 ∑_bjck(t_bick s_aj sᵗ_bjck γ)
     #  - 1 ∑_bjck(t_akbj s_ci sᵗ_bjck γ)
 
-    D_ov .+= s1' * (
-                 2 * γ * γ_bar +
-                 2 * s1 ⋅ s1_bar +
-                 1 * s2 ⋅ s2_t
-             ) -
-             2 * einsum("aj,bi,bj->ia", s1, s1, s1_bar) +
-             1 * einsum("aibj,bj->ia", v2, s1_bar) * γ +
-             1 * einsum("aibj,ck,bjck->ia", v2, s1, s2_t) -
-             2 * einsum("akbj,ci,bjck->ia", s2, s1, s2_t) -
-             2 * einsum("bick,aj,bjck->ia", s2, s1, s2_t) -
-             1 * einsum("bick,aj,bjck->ia", t2, s1, s2_t) * γ -
-             1 * einsum("akbj,ci,bjck->ia", t2, s1, s2_t) * γ
-
     # b':
     #  D1_ia = ∑_bj(u_aibj sᴸ_bj)
-
-    D_ov .+= einsum("aibj,bj->ia", u2, s1_bar)
 
     # b:
     #  D0_ai = ∑_bj(s_bj tᵗ_aibj)
@@ -212,9 +220,12 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     #     + ∑_icj(s_bicj tᵗ_aicj)
     #     + ∑_icj(t_bicj tᵗ_aicj γ)
 
-    D_vv .+= 1 * einsum("bi,ai->ab", s1, t1_bar) +
-             1 * einsum("bicj,aicj->ab", s2, t2_t) +
-             1 * einsum("bicj,aicj->ab", t2, t2_t) * γ
+    D_vv .+= einsum("bi,ai->ab", s1, t1_bar)
+    D_vv .+= einsum("bi,ai->ab", s1, s1_bar) * γ
+    D_vv .+= einsum("bi,cj,aicj->ab", s1, s1, s2_t)
+
+    D_vv .+= einsum("bicj,aicj->ab", s2, t2_t)
+    D_vv .+= einsum("bicj,aicj->ab", t2, t2_t) * γ
 
     # b:
     #  D1_ab =
@@ -222,14 +233,12 @@ function one_electron_one_photon(p::QED_CCSD_PARAMS)
     #  + ∑_icj(s_bi s_cj sᵗ_aicj)
     #  + ∑_icj(s_bicj sᵗ_aicj γ)
 
-    D_vv .+= einsum("bi,ai->ab", s1, s1_bar) * γ +
-             einsum("bi,cj,aicj->ab", s1, s1, s2_t) +
-             einsum("bicj,aicj->ab", s2, s2_t) * γ
-
     # b':
     #  D1_ab = ∑_icj(sᵗ_aicj t_bicj)
 
-    D_vv .+= einsum("aicj,bicj->ab", s2_t, t2)
+    D_vv .+= einsum("bicj,aicj->ab", t2, s2_t)
+    D_vv .+= einsum("bicj,aicj->ab", s2, s2_t) * γ
+    display(D)
 
     D
 end
@@ -533,16 +542,19 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     #
     # + 1 ∑_ckdl(v_aick u_bjdl sᵗ_ckdl)
     # + 1 ∑_ckdl(v_bjck u_aidl sᵗ_ckdl)
+    #
     # - 1 ∑_ckdl(v_aibk t_cjdl sᵗ_ckdl)
     # - 1 ∑_ckdl(v_aicj t_bkdl sᵗ_ckdl)
     # - 1 ∑_ckdl(v_ajck t_bidl sᵗ_ckdl)
     # - 1 ∑_ckdl(v_akbj t_cidl sᵗ_ckdl)
     # - 1 ∑_ckdl(v_bjci t_akdl sᵗ_ckdl)
+    #
     # - 1 ∑_ckdl(s_alck u_bjdi sᵗ_ckdl)
     # - 1 ∑_ckdl(s_bick u_ajdl sᵗ_ckdl)
     # - 1 ∑_ckdl(s_blck u_aidj sᵗ_ckdl)
     # - 1 ∑_ckdl(s_cidl u_akbj sᵗ_ckdl)
     # - 1 ∑_ckdl(s_cjdl u_aibk sᵗ_ckdl)
+    #
     # + 1 ∑_ckdl(s_ajck t_bldi sᵗ_ckdl)
     # + 1 ∑_ckdl(s_akbl t_cidj sᵗ_ckdl)
     # + 1 ∑_ckdl(s_alcj t_bkdi sᵗ_ckdl)
@@ -559,13 +571,13 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                1 * einsum("bk,aicj,ck->iajb", s1, u2, s1_bar) -
                1 * einsum("ci,akbj,ck->iajb", s1, u2, s1_bar) -
                1 * einsum("cj,aibk,ck->iajb", s1, u2, s1_bar) +
-               1 * einsum("aick,bjdl,ckdl->iajb", v2, u2, s2_t) +
-               1 * einsum("bjck,aidl,ckdl->iajb", v2, u2, s2_t) -
-               1 * einsum("aibk,cjdl,ckdl->iajb", v2, t2, s2_t) -
-               1 * einsum("aicj,bkdl,ckdl->iajb", v2, t2, s2_t) -
-               1 * einsum("ajck,bidl,ckdl->iajb", v2, t2, s2_t) -
-               1 * einsum("akbj,cidl,ckdl->iajb", v2, t2, s2_t) -
-               1 * einsum("bjci,akdl,ckdl->iajb", v2, t2, s2_t) -
+               1 * einsum("aick,bjdl,ckdl->iajb", v2, u2, s2_t) +   # 1
+               1 * einsum("bjck,aidl,ckdl->iajb", v2, u2, s2_t) -   # 1'
+               1 * einsum("aibk,cjdl,ckdl->iajb", v2, t2, s2_t) -   # 2     aibk -> akbj
+               1 * einsum("akbj,cidl,ckdl->iajb", v2, t2, s2_t) -   # 2'
+               1 * einsum("aicj,bkdl,ckdl->iajb", v2, t2, s2_t) -   # 3     aicj -> bjci
+               1 * einsum("bjci,akdl,ckdl->iajb", v2, t2, s2_t) -   # 3'
+               1 * einsum("ajck,bidl,ckdl->iajb", v2, t2, s2_t) -   # 4     ajck -> bick
                1 * einsum("alck,bjdi,ckdl->iajb", s2, u2, s2_t) -
                1 * einsum("bick,ajdl,ckdl->iajb", s2, u2, s2_t) -
                1 * einsum("blck,aidj,ckdl->iajb", s2, u2, s2_t) -
@@ -577,6 +589,11 @@ function two_electron_density(p::QED_CCSD_PARAMS)
                1 * einsum("bkci,ajdl,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("blci,akdj,ckdl->iajb", s2, t2, s2_t) +
                1 * einsum("cidj,akbl,ckdl->iajb", s2, t2, s2_t)
+
+    tmp = einsum("ajck,bidl,ckdl->iajb", v2, t2, s2_t) .+
+          einsum("bick,ajdl,ckdl->iajb", s2, u2, s2_t)
+
+    @show maximum(abs, tmp .- PermutedDimsArray(tmp, (3, 4, 1, 2)))
 
     # d_iabj =
     # 2 s_ai sᴸ_bj

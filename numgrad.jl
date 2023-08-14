@@ -10,6 +10,10 @@ function get_energy(mol, omega, coup, pol)
     run_eT_tor(mol, omega, coup, pol, "tmp_eT/grad", false) |> get_energy
 end
 
+function get_es_energy(mol)
+    
+end
+
 function perturb_geometry(mol, i, q, dx)
     coords = mol.atom_coords()
 
@@ -66,6 +70,22 @@ end
 function numgrad4_e_nuc(mol, i, q, h)
     function ef(n)
         perturb_geometry(mol, i, q, n * h).energy_nuc()
+    end
+
+    (-ef(2) + 8ef(1) - 8ef(-1) + ef(-2)) / 12h
+end
+
+function numgrad2_es(mol, omega, coup, pol, states, i, q, h)
+    function ef(n)
+        get_es(perturb_geometry(mol, i, q, n * h), omega, coup, pol, states)
+    end
+
+    (ef(1) - ef(-1)) / 2h
+end
+
+function numgrad4_es(mol, omega, coup, pol, states, i, q, h)
+    function ef(n)
+        get_es(perturb_geometry(mol, i, q, n * h), omega, coup, pol, states)
     end
 
     (-ef(2) + 8ef(1) - 8ef(-1) + ef(-2)) / 12h

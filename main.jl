@@ -65,6 +65,8 @@ include("kappa.jl")
 include("numgrad.jl")
 include("gradient.jl")
 include("dipole.jl")
+include("get_es.jl")
+include("run_eT_clean.jl")
 
 function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
     pol *= coup
@@ -165,6 +167,8 @@ function test()
 
     @time two_electron_density(p)
 
+    @show maximum(abs, p.d .- PermutedDimsArray(p.d, (3, 4, 1, 2)))
+
     D_1e_2e = one_electron_from_two_electron(p.mol, p.d)
 
     @show maximum(abs, D_1e_2e - p.D_e)
@@ -200,12 +204,12 @@ function test_numgrad()
 """, basis="STO-3G")
 
     ω = 0.5
-    coup = 0.1
-    # coup = 0.0
+    # coup = 0.1
+    coup = 0.0
     pol = [0.577350, 0.577350, 0.577350]
 
-    i = 1
-    q = 3
+    i = 4
+    q = 2
 
     g2 = @time numgrad2(mol, ω, coup, pol, i, q, 0.001)
     g4 = @time numgrad4(mol, ω, coup, pol, i, q, 0.001)
