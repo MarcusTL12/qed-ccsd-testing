@@ -7,11 +7,8 @@ function get_energy(out_dir::AbstractString)
 end
 
 function get_energy(mol, omega, coup, pol)
-    run_eT_tor(mol, omega, coup, pol, "tmp_eT/grad", false) |> get_energy
-end
-
-function get_es_energy(mol)
-    
+    # run_eT_tor(mol, omega, coup, pol, "tmp_eT/grad", false) |> get_energy
+    run_eT_new(mol, omega, coup, pol, "tmp_eT/grad", false) |> get_energy
 end
 
 function perturb_geometry(mol, i, q, dx)

@@ -1,4 +1,4 @@
-function make_inp_new(mol, omega, coup, pol, states)
+function make_inp_es(mol, omega, coup, pol, states)
     buf = IOBuffer()
 
     for i in 1:mol.natm
@@ -57,7 +57,7 @@ $geom
 end
 
 function run_eT_clean(mol, omega, coup, pol, states=1, outdir="tmp_eT/")
-    inp = make_inp_new(mol, omega, coup, pol, states)
+    inp = make_inp_es(mol, omega, coup, pol, states)
 
     inp_file = joinpath(outdir, "ccsd.inp")
 

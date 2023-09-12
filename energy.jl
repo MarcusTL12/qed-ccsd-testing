@@ -25,6 +25,8 @@ function get_energy_ccsd(p::QED_CCSD_PARAMS)
 
     E_hf = get_energy_hf(p.mol, h, g)
 
+    @show E_hf
+
     o = 1:p.nocc
     v = p.nocc+1:p.nao
 
@@ -38,8 +40,8 @@ function get_energy_ccsd(p::QED_CCSD_PARAMS)
          1 * einsum("iajb,ajbi->", g[o, v, o, v], p.t2)
 
     E3 = √(p.ω / 2) * (2 * einsum("ii->", d[o, o]) * p.γ +
-                     2 * einsum("ia,ai->", d[o, v], p.s1) +
-                     2 * einsum("ia,ai->", d[o, v], p.t1) * p.γ)
+                       2 * einsum("ia,ai->", d[o, v], p.s1) +
+                       2 * einsum("ia,ai->", d[o, v], p.t1) * p.γ)
 
     E4 = -√(p.ω / 2) * d_exp * p.γ
 
@@ -69,7 +71,7 @@ function get_energy_ccsd_t1_transformed(p::QED_CCSD_PARAMS)
          1 * einsum("iajb,ajbi->", g[o, v, o, v], p.t2)
 
     E3 = √(p.ω / 2) * (2 * einsum("ii->", d[o, o]) * p.γ +
-                     2 * einsum("ia,ai->", d[o, v], p.s1))
+                       2 * einsum("ia,ai->", d[o, v], p.s1))
 
     E4 = -√(p.ω / 2) * d_exp * p.γ
 
@@ -89,6 +91,8 @@ function get_energy_t1_density(p::QED_CCSD_PARAMS)
     h = t1_transform_1e(h, p.x, p.y)
     g = t1_transform_2e(g, p.x, p.y)
     d = t1_transform_1e(d, p.x, p.y)
+
+    @show maximum(abs, h .- get_matrix("h_pq_t1", "tmp_eT/ccsd"))
 
     E = p.mol.energy_nuc() +
         einsum("pq,pq->", h, p.D_e) +

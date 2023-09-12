@@ -59,6 +59,7 @@ include("integrals.jl")
 include("get_matrix.jl")
 include("get_vector.jl")
 include("run_eT_tor.jl")
+include("run_eT_new.jl")
 include("energy.jl")
 include("density.jl")
 include("kappa.jl")
@@ -121,7 +122,7 @@ function QED_CCSD_PARAMS(mol, ω, coup, pol, out_name)
 end
 
 function QED_CCSD_PARAMS(mol, ω, coup, pol)
-    QED_CCSD_PARAMS(mol, ω, coup, pol, run_eT_tor(mol, ω, coup, pol))
+    QED_CCSD_PARAMS(mol, ω, coup, pol, run_eT_new(mol, ω, coup, pol))
 end
 
 function test()
@@ -197,19 +198,17 @@ end
 
 function test_numgrad()
     mol = pyscf.M(atom="""
- H          0.86681        0.60144        5.00000
- H         -0.86681        0.60144        5.00000
- O          0.00000       -0.07579        5.00000
- He         0.10000       -0.02000        7.53000
+ H          0.0        0.0        0.0
+ H          1.0        0.0        0.0
 """, basis="STO-3G")
 
     ω = 0.5
     # coup = 0.1
-    coup = 0.0
+    coup = 0.05
     pol = [0.577350, 0.577350, 0.577350]
 
-    i = 4
-    q = 2
+    i = 2
+    q = 3
 
     g2 = @time numgrad2(mol, ω, coup, pol, i, q, 0.001)
     g4 = @time numgrad4(mol, ω, coup, pol, i, q, 0.001)

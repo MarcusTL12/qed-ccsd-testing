@@ -439,21 +439,17 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     #
     # + 1 ∑_ab(s_aibk sᵗ_ajbl)
 
-    diag_elem1 = einsum("ak,al->kl", s1, s1_bar)
-    diag_elem2 = einsum("akbm,albm->kl", s2, s2_t)
+    diag_elem = einsum("ak,al->kl", s1, s1_bar) +
+                einsum("akbm,albm->kl", s2, s2_t)
+
+    display(diag_elem)
 
     for i in o
-        d_oooo[i, i, :, :] .-= 2 * diag_elem1
-        d_oooo[:, :, i, i] .-= 2 * diag_elem1
+        d_oooo[i, i, :, :] .-= 2 * diag_elem
+        d_oooo[:, :, i, i] .-= 2 * diag_elem
 
-        d_oooo[i, :, :, i] .+= 1 * diag_elem1'
-        d_oooo[:, i, i, :] .+= 1 * diag_elem1
-
-        d_oooo[i, i, :, :] .-= 2 * diag_elem2
-        d_oooo[:, :, i, i] .-= 2 * diag_elem2
-
-        d_oooo[i, :, :, i] .+= 1 * diag_elem2'
-        d_oooo[:, i, i, :] .+= 1 * diag_elem2
+        d_oooo[i, :, :, i] .+= 1 * diag_elem'
+        d_oooo[:, i, i, :] .+= 1 * diag_elem
     end
 
     d_oooo .+= einsum("aibk,ajbl->ijkl", s2, s2_t)
@@ -480,34 +476,34 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 1 ∑_bcl(s_bk t_aicl sᵗ_bjcl)
     # + 1 ∑_bcl(s_ck t_albi sᵗ_bjcl)
 
-    diag_elem1 = einsum("akbl,bl->ka", v2, s1_bar)
-
-    diag_elem2 = einsum("al,bkcm,blcm->ka", s1, t2, s2_t) +
-                 einsum("bk,alcm,blcm->ka", s1, t2, s2_t)
+    diag_elem = 2 * s1' * γ_bar
+    diag_elem += einsum("akbl,bl->ka", v2, s1_bar)
+    diag_elem += -einsum("al,bkcm,blcm->ka", s1, t2, s2_t)
+    diag_elem += -einsum("bk,alcm,blcm->ka", s1, t2, s2_t)
 
     for i in o
-        d_ooov[i, i, :, :] .+= 4 * s1' * γ_bar
-        d_ooov[:, i, i, :] .-= 2 * s1' * γ_bar
-
-        d_ooov[i, i, :, :] .+= 2 * diag_elem1
-        d_ooov[:, i, i, :] .-= 1 * diag_elem1
-
-        d_ooov[i, i, :, :] .-= 2 * diag_elem2
-        d_ooov[:, i, i, :] .+= 1 * diag_elem2
+        d_ooov[i, i, :, :] .+= 2 * diag_elem
+        d_ooov[:, i, i, :] .-= 1 * diag_elem
     end
 
-    d_ooov .+= -1 * einsum("akbi,bj->ijka", v2, s1_bar) -
-               1 * einsum("bi,akcl,bjcl->ijka", s1, u2, s2_t) +
-               1 * einsum("al,bick,bjcl->ijka", s1, t2, s2_t) +
-               1 * einsum("bk,aicl,bjcl->ijka", s1, t2, s2_t) +
-               1 * einsum("ck,albi,bjcl->ijka", s1, t2, s2_t) -
-               2 * einsum("ak,bicl,bjcl->ijka", s1, t2, s2_t) +
-               1 * einsum("ai,bkcl,bjcl->ijka", s1, t2, s2_t)
+    d_ooov .-= 2 * einsum("ak,bicl,bjcl->ijka", s1, t2, s2_t)
+    d_ooov .+= 1 * einsum("ai,bkcl,bjcl->ijka", s1, t2, s2_t)
+
+    d_ooov .-= 1 * einsum("akbi,bj->ijka", v2, s1_bar)
+
+    d_ooov .-= 1 * einsum("bi,akcl,bjcl->ijka", s1, u2, s2_t)
+    d_ooov .+= 1 * einsum("bk,aicl,bjcl->ijka", s1, t2, s2_t)
+    d_ooov .+= 1 * einsum("al,bick,bjcl->ijka", s1, t2, s2_t)
+    d_ooov .+= 1 * einsum("ck,albi,bjcl->ijka", s1, t2, s2_t)
 
     # d_ijak =
     # - ∑_b(s_bi sᵗ_bjak)
 
     d_oovo .-= einsum("bi,bjak->ijak", s1, s2_t)
+
+    # tmp = -einsum("bi,bjak->ijak", s1, s2_t)
+    # @show maximum(abs, reshape(tmp, p.nocc^2, p.nocc * p.nvir) .-
+    #                    get_matrix("d_vooo", "tmp_eT/ccsd"))
 
     # d_ijab =
     # + 2 ∑_k(δ_ij s_bk sᴸ_ak)
@@ -562,38 +558,46 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # + 1 ∑_ckdl(s_blci t_akdj sᵗ_ckdl)
     # + 1 ∑_ckdl(s_cidj t_akbl sᵗ_ckdl)
 
-    d_ovov .+= 2 * permutedims(v2, (2, 1, 4, 3)) * γ_bar +
-               2 * einsum("ai,bjck,ck->iajb", s1, u2, s1_bar) +
-               2 * einsum("bj,aick,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("aj,bick,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("ak,bjci,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("bi,ajck,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("bk,aicj,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("ci,akbj,ck->iajb", s1, u2, s1_bar) -
-               1 * einsum("cj,aibk,ck->iajb", s1, u2, s1_bar) +
-               1 * einsum("aick,bjdl,ckdl->iajb", v2, u2, s2_t) +   # 1
-               1 * einsum("bjck,aidl,ckdl->iajb", v2, u2, s2_t) -   # 1'
-               1 * einsum("aibk,cjdl,ckdl->iajb", v2, t2, s2_t) -   # 2     aibk -> akbj
-               1 * einsum("akbj,cidl,ckdl->iajb", v2, t2, s2_t) -   # 2'
-               1 * einsum("aicj,bkdl,ckdl->iajb", v2, t2, s2_t) -   # 3     aicj -> bjci
-               1 * einsum("bjci,akdl,ckdl->iajb", v2, t2, s2_t) -   # 3'
-               1 * einsum("ajck,bidl,ckdl->iajb", v2, t2, s2_t) -   # 4     ajck -> bick
-               1 * einsum("alck,bjdi,ckdl->iajb", s2, u2, s2_t) -
-               1 * einsum("bick,ajdl,ckdl->iajb", s2, u2, s2_t) -
-               1 * einsum("blck,aidj,ckdl->iajb", s2, u2, s2_t) -
-               1 * einsum("cidl,akbj,ckdl->iajb", s2, u2, s2_t) -
-               1 * einsum("cjdl,aibk,ckdl->iajb", s2, u2, s2_t) +
-               1 * einsum("ajck,bldi,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("akbl,cidj,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("alcj,bkdi,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("bkci,ajdl,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("blci,akdj,ckdl->iajb", s2, t2, s2_t) +
-               1 * einsum("cidj,akbl,ckdl->iajb", s2, t2, s2_t)
+    d_ovov_b = zeros(size(d_ovov))
 
-    tmp = einsum("ajck,bidl,ckdl->iajb", v2, t2, s2_t) .+
-          einsum("bick,ajdl,ckdl->iajb", s2, u2, s2_t)
+    d_ovov_b .+= 2 * permutedims(v2, (2, 1, 4, 3)) * γ_bar
 
-    @show maximum(abs, tmp .- PermutedDimsArray(tmp, (3, 4, 1, 2)))
+    d_ovov_b .+= 2 * einsum("ai,bjck,ck->iajb", s1, u2, s1_bar)
+    d_ovov_b .+= 2 * einsum("bj,aick,ck->iajb", s1, u2, s1_bar)
+    d_ovov_b .-= 1 * einsum("aj,bick,ck->iajb", s1, u2, s1_bar)
+    d_ovov_b .-= 1 * einsum("ak,bjci,ck->iajb", s1, u2, s1_bar)
+    d_ovov_b .-= 1 * einsum("bi,ajck,ck->iajb", s1, u2, s1_bar)
+    d_ovov_b .-= 1 * einsum("bk,aicj,ck->iajb", s1, u2, s1_bar)
+    d_ovov_b .-= 1 * einsum("ci,akbj,ck->iajb", s1, u2, s1_bar)
+    d_ovov_b .-= 1 * einsum("cj,aibk,ck->iajb", s1, u2, s1_bar)
+
+    du_ovov = zeros(size(d_ovov))
+
+    du_ovov .+= 1 * einsum("bjck,aidl,ckdl->iajb", v2, u2, s2_t)
+
+    du_ovov .-= 1 * einsum("alck,bjdi,ckdl->iajb", s2, u2, s2_t)
+    du_ovov .-= 1 * einsum("bjci,akdl,ckdl->iajb", v2, t2, s2_t)
+
+    du_ovov .-= 1 * einsum("cjdl,aibk,ckdl->iajb", s2, u2, s2_t)
+    du_ovov .-= 1 * einsum("aibk,cjdl,ckdl->iajb", v2, t2, s2_t)
+
+    du_ovov .+= 1 * einsum("blci,akdj,ckdl->iajb", s2, t2, s2_t)
+
+    ds_ovov = zeros(size(d_ovov))
+
+    ds_ovov .-= 1 * einsum("bick,ajdl,ckdl->iajb", s2, u2, s2_t)
+    ds_ovov .+= 1 * einsum("ajck,bldi,ckdl->iajb", s2, t2, s2_t)
+
+    ds_ovov .-= 1 * einsum("ajck,bidl,ckdl->iajb", v2, t2, s2_t)
+    ds_ovov .+= 1 * einsum("bkci,ajdl,ckdl->iajb", s2, t2, s2_t)
+
+    ds_ovov .+= 1 * einsum("akbl,cidj,ckdl->iajb", s2, t2, s2_t)
+
+    ds_ovov .+= 1 * einsum("cidj,akbl,ckdl->iajb", s2, t2, s2_t)
+
+    d_ovov_b .+= du_ovov + permutedims(du_ovov, (3, 4, 1, 2)) + ds_ovov
+
+    d_ovov .+= d_ovov_b
 
     # d_iabj =
     # 2 s_ai sᴸ_bj
@@ -623,23 +627,35 @@ function two_electron_density(p::QED_CCSD_PARAMS)
     # - 1 ∑_jdk(s_ak t_cjdi sᵗ_bjdk)
     # - 1 ∑_jdk(s_di t_akcj sᵗ_bjdk)
 
-    d_ovvv .+= 1 * einsum("aicj,bj->iabc", v2, s1_bar) +
-               1 * einsum("cj,aidk,bjdk->iabc", s1, u2, s2_t) +
-               2 * einsum("ai,cjdk,bjdk->iabc", s1, t2, s2_t) -
-               1 * einsum("ci,ajdk,bjdk->iabc", s1, t2, s2_t) -
-               1 * einsum("aj,cidk,bjdk->iabc", s1, t2, s2_t) -
-               1 * einsum("ak,cjdi,bjdk->iabc", s1, t2, s2_t) -
-               1 * einsum("di,akcj,bjdk->iabc", s1, t2, s2_t)
+    d_ovvv_b = zeros(size(d_ovvv))
+
+    d_ovvv_b .+= 1 * einsum("aicj,bj->iabc", v2, s1_bar)
+
+    d_ovvv_b .+= 1 * einsum("cj,aidk,bjdk->iabc", s1, u2, s2_t)
+
+    d_ovvv_b .+= 2 * einsum("ai,cjdk,bjdk->iabc", s1, t2, s2_t)
+    d_ovvv_b .-= 1 * einsum("ci,ajdk,bjdk->iabc", s1, t2, s2_t)
+
+    d_ovvv_b .-= 1 * einsum("aj,cidk,bjdk->iabc", s1, t2, s2_t)
+    d_ovvv_b .-= 1 * einsum("aj,ckdi,bkdj->iabc", s1, t2, s2_t)
+
+    d_ovvv_b .-= 1 * einsum("di,akcj,bjdk->iabc", s1, t2, s2_t)
+
+    d_ovvv .+= d_ovvv_b
 
     # d_aibc =
     # ∑_j(s_cj sᵗ_aibj)
 
-    d_vovv .+= einsum("cj,aibj->aibc", s1, s2_t)
+    d_vovv_b = einsum("cj,aibj->aibc", s1, s2_t)
+
+    d_vovv .+= d_vovv_b
 
     # d_abcd =
     # ∑_ij(s_bidj sᵗ_aicj)
 
-    d_vvvv .+= einsum("bidj,aicj->abcd", s2, s2_t)
+    d_vvvv_b = einsum("bidj,aicj->abcd", s2, s2_t)
+
+    d_vvvv .+= d_vvvv_b
 
     permutedims!(d_ovoo, d_ooov, (3, 4, 1, 2))
     permutedims!(d_vooo, d_oovo, (3, 4, 1, 2))
