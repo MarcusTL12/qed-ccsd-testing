@@ -1,0 +1,45 @@
+- system
+    charge: 0
+
+- method
+    qed-hf
+    qed-ccsd
+
+- memory
+    available: 8
+
+- solver cholesky
+    threshold: 1.0d-12
+
+- solver scf
+    algorithm:          scf-diis
+    energy threshold:   1.0d-10
+    gradient threshold: 1.0d-10
+
+- solver cc gs
+    omega threshold:  1.0d-10
+    energy threshold: 1.0d-10
+
+- do
+    mean value
+
+- cc mean value
+    dipole
+    molecular gradient
+
+
+- solver cc multipliers
+   threshold: 1.0d-11
+
+- boson
+    modes:          1
+    boson states:   {1}
+    frequency:      {0.5}
+    coupling:       {0.0}
+    polarization:   {0.57735, 0.57735, 0.57735}
+
+- geometry
+basis: cc-pvdz
+H    0.0 0.0 0.0
+H    1.0 0.0 0.0
+O    0.25 1.0 0.0

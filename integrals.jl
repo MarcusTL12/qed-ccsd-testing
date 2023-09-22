@@ -39,6 +39,13 @@ function get_qed_g(mol, C, d, int=mol.intor("int2e", aosym="s8"))
     g + einsum("ij,kl->ijkl", d, d)
 end
 
+function get_qed_g_ao(mol, pol)
+    g = mol.intor("int2e")
+    d = get_ao_d(mol, pol)
+
+    g + einsum("pq,rs->pqrs", d, d)
+end
+
 function get_mo_h(mol, C)
     C' * get_ao_h(mol) * C
 end

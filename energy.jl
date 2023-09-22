@@ -103,3 +103,62 @@ function get_energy_t1_density(p::QED_CCSD_PARAMS)
 
     @show E
 end
+
+function get_1e_energy(mol, C, p::QED_CCSD_PARAMS)
+    d = get_qed_d(mol, p.pol, C)
+    d_exp = get_qed_dipmom(mol, d)
+
+    h = get_qed_h(mol, C, d)
+
+    h = t1_transform_1e(h, p.x, p.y)
+    d = t1_transform_1e(d, p.x, p.y)
+
+    E = 0.0
+
+    E += einsum("pq,pq->", h, p.D_e)
+    E += √(p.ω / 2) * einsum("pq,pq->", d, p.D_ep)
+    E -= √(p.ω / 2) * d_exp * p.D_p2
+    E += p.ω * p.D_p1
+
+    E
+end
+
+function get_2e_energy(mol, C, p::QED_CCSD_PARAMS)
+    d = get_qed_d(mol, p.pol, C)
+
+    g = get_qed_g(mol, C, d)
+
+    g = t1_transform_2e(g, p.x, p.y)
+
+    1 / 2 * einsum("pqrs,pqrs->", g, p.d)
+end
+
+function get_2e_energy_no_d(mol, C, p::QED_CCSD_PARAMS)
+    g = get_mo_g(mol, C)
+
+    g = t1_transform_2e(g, p.x, p.y)
+
+    1 / 2 * einsum("pqrs,pqrs->", g, p.d)
+end
+
+function get_kappa_1e_energy(mol, C, p::QED_CCSD_PARAMS, kappabar)
+    d = get_qed_d(mol, p.pol, C)
+
+    h = get_qed_h(mol, C, d)
+
+    einsum("pq,pq->", kappabar, h)
+end
+
+function get_kappa_2e_energy(mol, C, p::QED_CCSD_PARAMS, kappabar)
+    o = 1:p.nocc
+
+    d = get_qed_d(mol, p.pol, C)
+
+    g = get_qed_g(mol, C, d)
+
+    # F = h + 2 * einsum("pqkk->pq", g) - einsum("pkkq->pq", g)
+    G = [sum(2 * g[p, q, i, i] - g[p, i, i, q] for i in o) for p in 1:p.nao, q in 1:p.nao]
+    # display(F)
+
+    einsum("pq,pq->", kappabar, G)
+end

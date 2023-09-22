@@ -64,6 +64,14 @@ function numgrad4_ao_d(mol, pol, i, q, h)
     (-int_func(2) + 8int_func(1) - 8int_func(-1) + int_func(-2)) ./ 12h
 end
 
+function numgrad4_f(mol, f, i, q, h)
+    function int_func(n)
+        f(perturb_geometry(mol, i, q, n * h))
+    end
+
+    (-int_func(2) + 8int_func(1) - 8int_func(-1) + int_func(-2)) ./ 12h
+end
+
 function numgrad4_e_nuc(mol, i, q, h)
     function ef(n)
         perturb_geometry(mol, i, q, n * h).energy_nuc()

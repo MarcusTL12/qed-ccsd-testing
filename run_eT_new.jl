@@ -51,6 +51,9 @@ function make_inp_new(mol, omega, coup, pol, multipliers)
 
 $multipliers_code
 
+- solver cc multipliers
+   threshold: 1.0d-11
+
 - boson
     modes:          1
     boson states:   {1}
